@@ -3,8 +3,8 @@ RUN useradd -rm -d /home/app -s /bin/bash -g root -G sudo -u 1001 app
 
 WORKDIR /home/app
 COPY ./tools/run.sh /home/app
-COPY ./build/libs/core-work-management-*-plain.jar /home/app/app-plain.jar
-COPY ./build/libs/core-work-management-*.jar /home/app/app.jar
+COPY ./build/libs/*-plain.jar /home/app/app-plain.jar
+COPY ./build/libs/*.jar /home/app/app.jar
 RUN chown app:root /home/app/*.jar \
     && chmod 755 /home/app/*.jar
 
