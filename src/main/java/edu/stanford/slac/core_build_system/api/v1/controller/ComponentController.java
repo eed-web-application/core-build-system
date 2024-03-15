@@ -30,6 +30,10 @@ public class ComponentController {
                         ComponentDTO.builder()
                                 .id("2")
                                 .name("component 2")
+                                .build(),
+                        ComponentDTO.builder()
+                                .id("3")
+                                .name("component 3")
                                 .build()
                 )
         );
