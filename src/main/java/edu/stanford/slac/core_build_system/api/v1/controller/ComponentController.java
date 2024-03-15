@@ -16,10 +16,10 @@ import java.util.List;
 @Schema(description = "Api set for media management")
 public class ComponentController {
     @GetMapping(
-            path = "/world",
             produces = {MediaType.APPLICATION_JSON_VALUE}
     )
     @Operation(summary = "Download a content from a file entry")
+    @ResponseStatus(HttpStatus.OK)
     public ApiResultResponse<List<ComponentDTO>> listAllComponent() throws Exception {
         return ApiResultResponse.of(
                 List.of(

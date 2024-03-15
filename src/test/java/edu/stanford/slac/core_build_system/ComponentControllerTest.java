@@ -2,8 +2,9 @@ package edu.stanford.slac.core_build_system;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.stanford.slac.eed_java_backend_example.api.v1.dto.ApiResultResponse;
-import org.assertj.core.api.AssertionsForClassTypes;
+import edu.stanford.slac.ad.eed.baselib.api.v1.dto.ApiResultResponse;
+import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +17,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.http.MediaType;
 
+import java.util.List;
+
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,20 +35,22 @@ public class ComponentControllerTest {
     @Test
     public void fetchQueryParameter() throws Exception {
         MvcResult get_result = mockMvc.perform(
-                        get("/v1/hello/world")
+                        get("/v1/component")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .accept(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk())
                 .andReturn();
-        ApiResultResponse<String> api_result = new ObjectMapper().readValue(
+        ApiResultResponse<List<ComponentDTO>> api_result = new ObjectMapper().readValue(
                 get_result.getResponse().getContentAsString(),
                 new TypeReference<>() {
                 });
 
-        AssertionsForClassTypes.assertThat(api_result).isNotNull();
-        AssertionsForClassTypes.assertThat(api_result.getErrorCode()).isEqualTo(0);
-        AssertionsForClassTypes.assertThat(api_result.getPayload())
-                .isEqualTo("hello world");
+        assertThat(api_result).isNotNull();
+        assertThat(api_result.getErrorCode()).isEqualTo(0);
+        assertThat(api_result.getPayload())
+                .hasSize(3)
+                .extracting(ComponentDTO::id)
+                .contains("1", "2", "3");
     }
 }

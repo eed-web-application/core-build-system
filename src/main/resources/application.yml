@@ -1,17 +1,44 @@
 logging:
   level:
-    edu.stanford.slac.core_build_system: DEBUG
-    org.springdoc: debug
+    edu.stanford.slac.code_inventory_system: ${CBS_LOG_LEVEL:DEBUG}
 
 server:
   tomcat:
     mbeanregistry:
       enabled: true
 
+spring:
+  application:
+    name: 'cbs'
+  ldap:
+    urls: ${CBS_LDAP_URI:ldap://localhost:8389}
+    base: ${CBS_LDAP_BASE:dc=sdf,dc=slac,dc=stanford,dc=edu}
+  data:
+    mongodb:
+      uri: ${CBS_MONGODB_URI:mongodb://cbs:cbs@localhost:27017/cbs?authSource=cbs}
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 1MB
+      max-file-size: ${CBS_MAX_POST_SIZE:100MB}
+      max-request-size: ${CBS_MAX_POST_SIZE:100MB}
+
 edu:
   stanford:
     slac:
-      core_build_system:
+      core_work_management:
+        cis_backend_url: ${CBS_CIS_URL:http://localhost:8081}
+      ad:
+        eed:
+          baselib:
+            app-token-prefix: ${spring.application.name}
+            app-token-jwt-key: ${CBS_APP_TOKEN_JWT_KEY:token-header-key}
+            user-header-name: ${CBS_AUTH_HEADER:x-vouch-idp-accesstoken}
+            oauth-server-discover: ${CBS_OIDC_CONFIGURATION_ENDPOINT:https://dex.slac.stanford.edu/.well-known/openid-configuration}
+            root-user-list: ${CBS_ROOT_USERS}
+            root-authentication-token-list-json: ${CBS_ROOT_AUTHENTICATION_TOKEN_JSON:[]}
+          mongodb:
+            db_admin_uri: ${CBS_ADMIN_MONGODB_URI:mongodb://admin:admin@localhost:27017/?authSource=admin}
 
 management:
   endpoints:
@@ -22,13 +49,24 @@ management:
     tags:
       application: ${spring.application.name}
 
-spring:
-  application:
-    name: 'core-build-system' 
-
 # swagger-ui custom path
 springdoc:
+  title: 'Core Build System API'
+  description: 'Core Build System API for the Accelerator Division at SLAC National Accelerator Laboratory'
+  contact:
+    name: 'API Support'
+    url: 'https://confluence.slac.stanford.edu/display/EEDWAD/EED+Web+Applications'
+    email: 'bisegni@sac.stanford.edu'
   swagger-ui:
-    path: /swagger-ui.html
+    enabled: false
   api-docs:
     path: /api-docs
+
+mongock:
+  migration-scan-package:
+    - edu.stanford.slac.core_build_system.migration
+  throw-exception-if-cannot-obtain-lock: true #Default true
+  track-ignored: false #Default true
+  transaction-enabled: false
+  runner-type: initializingbean
+  enabled: true #Default true
