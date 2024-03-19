@@ -2,7 +2,9 @@ package edu.stanford.slac.core_build_system.api.v1.controller;
 
 import edu.stanford.slac.ad.eed.baselib.api.v1.dto.ApiResultResponse;
 import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.ComponentSummaryDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.UpdateComponentDTO;
 import edu.stanford.slac.core_build_system.service.ComponentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,11 +36,52 @@ public class ComponentController {
     }
 
     @GetMapping(
+            path = "/{id}",
+            produces = {MediaType.APPLICATION_JSON_VALUE}
+    )
+    @Operation(summary = "Find a component by an id")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResultResponse<ComponentDTO> findById(
+           @PathVariable String id
+    ) throws Exception {
+        return ApiResultResponse.of(
+                componentService.findById(id)
+        );
+    }
+
+    @DeleteMapping(
+            path = "/{id}",
+            produces = {MediaType.APPLICATION_JSON_VALUE}
+    )
+    @Operation(summary = "Delete a component by his id")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResultResponse<Boolean> deleteById(
+            @PathVariable String id
+    ) throws Exception {
+        componentService.deleteById(id);
+        return ApiResultResponse.of(true);
+    }
+
+    @PutMapping(
+            path = "/{id}",
+            produces = {MediaType.APPLICATION_JSON_VALUE}
+    )
+    @Operation(summary = "Delete a component by his id")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResultResponse<Boolean> updateById(
+            @PathVariable String id,
+            @RequestBody @Valid UpdateComponentDTO updateComponentDTO
+    ) throws Exception {
+        componentService.updateById(id, updateComponentDTO);
+        return ApiResultResponse.of(true);
+    }
+
+    @GetMapping(
             produces = {MediaType.APPLICATION_JSON_VALUE}
     )
     @Operation(summary = "List all components")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<List<ComponentDTO>> listAllComponent() throws Exception {
+    public ApiResultResponse<List<ComponentSummaryDTO>> listAllComponent() throws Exception {
         return ApiResultResponse.of(
                 componentService.findAll()
         );

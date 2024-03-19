@@ -64,12 +64,12 @@ public class ComponentService {
      * @param id The unique identifier of the component
      * @return The details of the component
      */
-    public ComponentSummaryDTO findById(String id) {
+    public ComponentDTO findById(String id) {
         return wrapCatch(
                 () -> componentRepository.findById(id),
                 -1
         )
-                .map(componentMapper::toSummaryDTO)
+                .map(componentMapper::toDTO)
                 .orElseThrow(() -> ComponentNotFound.byId().errorCode(-2).id(id).build());
     }
 
@@ -78,11 +78,11 @@ public class ComponentService {
      *
      * @return The details of all components
      */
-    public List<ComponentDTO> findAll() {
+    public List<ComponentSummaryDTO> findAll() {
         return wrapCatch(
                 () -> componentRepository.findAll(),
                 -1
-        ).stream().map(componentMapper::toDTO).toList();
+        ).stream().map(componentMapper::toSummaryDTO).toList();
     }
 
     /**

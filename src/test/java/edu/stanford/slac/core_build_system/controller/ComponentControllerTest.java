@@ -1,9 +1,5 @@
 package edu.stanford.slac.core_build_system.controller;
 
-import edu.stanford.slac.core_build_system.api.v1.dto.CommandTemplateInstanceDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.CommandTemplateParameterDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
 import edu.stanford.slac.core_build_system.model.CommandTemplate;
 import edu.stanford.slac.core_build_system.model.Component;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,14 +15,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 @AutoConfigureMockMvc
 @SpringBootTest()
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

@@ -6,8 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.slac.ad.eed.baselib.api.v1.dto.ApiResultResponse;
 import edu.stanford.slac.ad.eed.baselib.auth.JWTHelper;
 import edu.stanford.slac.ad.eed.baselib.config.AppProperties;
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.model.Component;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -32,6 +31,7 @@ public class TestControllerHelperService {
 
     }
 
+
     public ApiResultResponse<String> componentControllerCreate(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -51,11 +51,153 @@ public class TestControllerHelperService {
         );
     }
 
-    public ApiResultResponse<List<ComponentDTO>> componentControllerFindAll(
+    public ApiResultResponse<ComponentDTO> componentControllerFindById(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            String id) throws Exception {
+        var requestBuilder = get("/v1/component/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<Boolean> componentControllerDeleteById(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            String id) throws Exception {
+        var requestBuilder = delete("/v1/component/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<Boolean> componentControllerUpdateById(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            String id,
+            UpdateComponentDTO updateComponentDTO) throws Exception {
+        var requestBuilder = put("/v1/component/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(updateComponentDTO));
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<List<ComponentSummaryDTO>> componentControllerFindAll(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
             Optional<String> userInfo) throws Exception {
         var requestBuilder = get("/v1/component");
+
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+
+    public ApiResultResponse<String> commandControllerCreate(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            NewCommandTemplateDTO newCommandTemplateDTO) throws Exception {
+        var requestBuilder = post("/v1/command")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(newCommandTemplateDTO));
+
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<CommandTemplateDTO> commandControllerFindById(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            String id) throws Exception {
+        var requestBuilder = get("/v1/command/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<Boolean> commandControllerDeleteById(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            String id) throws Exception {
+        var requestBuilder = delete("/v1/command/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<Boolean> commandControllerUpdateById(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            String id,
+            UpdateCommandTemplateDTO updateCommandTemplateDTO) throws Exception {
+        var requestBuilder = put("/v1/command/{id}", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(updateCommandTemplateDTO));
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<List<CommandTemplateSummaryDTO>> commandControllerFindAll(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo) throws Exception {
+        var requestBuilder = get("/v1/command");
 
         return executeHttpRequest(
                 new TypeReference<>() {
