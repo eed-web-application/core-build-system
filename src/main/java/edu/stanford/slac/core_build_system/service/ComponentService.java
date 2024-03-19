@@ -48,6 +48,34 @@ public class ComponentService {
                         newComponentDTO.version()
                 )
         );
+
+        //check if the command templates exists
+        newComponentDTO.commandTemplatesInstances().forEach(
+                templateInstance -> {
+                    // check for the existence of the command template
+                    assertion(
+                            ControllerLogicException.builder()
+                                    .errorCode(-2)
+                                    .errorMessage("The command template %s does not exist".formatted(templateInstance.id()))
+                                    .build(),
+                            () -> commandTemplateRepository.existsById(templateInstance.id())
+                    );
+
+                    // check for the validity of the parameters for the command template
+                    assertion(
+                            ControllerLogicException.builder()
+                                    .errorCode(-3)
+                                    .errorMessage("One or more parameters '%s' are not valid for the command template".formatted(String.join(", ", templateInstance.parametersValues().keySet())))
+                                    .build(),
+                            () -> commandTemplateRepository.existsByIdAndParametersContains(
+                                    templateInstance.id(),
+                                    templateInstance.parametersValues().keySet()
+                            )
+                    );
+                }
+
+        );
+
         // create a new component
         var savedComponent = wrapCatch(
                 () -> componentRepository.save(
@@ -98,7 +126,7 @@ public class ComponentService {
         ).orElseThrow(() -> ComponentNotFound.byId().errorCode(-2).id(id).build());
 
         // check for depend on itself
-        if(updateComponentDTO.dependOnComponentIds() != null) {
+        if (updateComponentDTO.dependOnComponentIds() != null) {
             assertion(
                     ControllerLogicException.builder()
                             .errorCode(-1)
