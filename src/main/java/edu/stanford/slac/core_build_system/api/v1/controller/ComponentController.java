@@ -23,7 +23,7 @@ public class ComponentController {
     @PostMapping(
             produces = {MediaType.APPLICATION_JSON_VALUE}
     )
-    @Operation(summary = "Download a content from a file entry")
+    @Operation(summary = "Create a new component")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResultResponse<String> create(
             @RequestBody @Valid NewComponentDTO newComponentDTO
@@ -36,7 +36,7 @@ public class ComponentController {
     @GetMapping(
             produces = {MediaType.APPLICATION_JSON_VALUE}
     )
-    @Operation(summary = "Download a content from a file entry")
+    @Operation(summary = "List all components")
     @ResponseStatus(HttpStatus.OK)
     public ApiResultResponse<List<ComponentDTO>> listAllComponent() throws Exception {
         return ApiResultResponse.of(
