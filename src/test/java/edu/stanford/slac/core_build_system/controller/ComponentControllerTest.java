@@ -42,8 +42,5 @@ public class ComponentControllerTest {
     @Test
     public void findAll() throws Exception {
 
-
-
-
     }
 }

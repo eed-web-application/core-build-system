@@ -1,7 +1,6 @@
 package edu.stanford.slac.core_build_system.controller;
 
 import edu.stanford.slac.core_build_system.model.CommandTemplate;
-import edu.stanford.slac.core_build_system.model.Component;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;

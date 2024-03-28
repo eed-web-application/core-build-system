@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 
+import java.util.List;
 import java.util.Set;
 
 @Builder(toBuilder = true)
@@ -22,13 +23,12 @@ public record NewComponentDTO(
         @NotEmpty
         @Schema(description = "The version of the component")
         String version,
-        @NotEmpty
-        @Schema(description = "The URL of the component [src, artifact, etc.]")
-        String url,
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
         Set<String> dependOnComponentIds,
         @NotEmpty
         @Schema(description = "The list command template instances to execute to build the component.")
-        Set<CommandTemplateInstanceDTO> commandTemplatesInstances
+        List<CommandTemplateInstanceDTO> commandTemplatesInstances,
+        @Schema(description = "The list of command templates that the component will use.")
+        List<CommandTemplateDTO> commandTemplates
 ) {
 }

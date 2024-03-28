@@ -1,10 +1,7 @@
 package edu.stanford.slac.core_build_system.service;
 
 import edu.stanford.slac.ad.eed.baselib.exception.ControllerLogicException;
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentSummaryDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.UpdateComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentMapper;
 import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
@@ -17,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.assertion;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
@@ -62,15 +60,13 @@ public class ComponentService {
                     );
 
                     // check for the validity of the parameters for the command template
+                    var parameterNames = templateInstance.parameters().stream().map(CommandTemplateInstanceParameterDTO::name).toList();
                     assertion(
                             ControllerLogicException.builder()
                                     .errorCode(-3)
-                                    .errorMessage("One or more parameters '%s' are not valid for the command template".formatted(String.join(", ", templateInstance.parametersValues().keySet())))
+                                    .errorMessage("One or more parameters '%s' are not valid for the command template".formatted(String.join(", ", parameterNames)))
                                     .build(),
-                            () -> commandTemplateRepository.existsByIdAndParametersContains(
-                                    templateInstance.id(),
-                                    templateInstance.parametersValues().keySet()
-                            )
+                            () -> commandTemplateRepository.existsByIdAndParameters_NameIn(templateInstance.id(),parameterNames)
                     );
                 }
 

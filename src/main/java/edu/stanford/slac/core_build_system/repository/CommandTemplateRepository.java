@@ -10,5 +10,5 @@ import java.util.Set;
 public interface CommandTemplateRepository extends MongoRepository<CommandTemplate, String> {
     boolean existsByName(String name);
 
-    boolean existsByIdAndParametersContains(String id, Set<String> parameters);
+    boolean existsByIdAndParameters_NameIn(String id, List<String> parameters);
 }

@@ -13,7 +13,7 @@ public interface ComponentRepository extends MongoRepository<Component, String> 
      * @param buildCommandId The unique identifier of the command template
      * @return True if at least one component uses that command template
      */
-    boolean existsByBuildCommandTemplateIdsContains(String buildCommandId);
+    boolean existsByCommandTemplatesInstances_IdContains(String buildCommandId);
 
     /**
      * Check if a component  is used by another component

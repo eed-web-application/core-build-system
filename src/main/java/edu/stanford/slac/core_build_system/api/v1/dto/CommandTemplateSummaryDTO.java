@@ -19,6 +19,6 @@ public record CommandTemplateSummaryDTO(
         @Schema(description = "The parameter used by the command")
         Set<CommandTemplateParameterDTO> parameters,
         @Schema(description = "Those are the list of the action that the command will take")
-        Set<String> commandExecutionsLayers
+        Set<ExecutionPipelineDTO> commandExecutionsLayers
 ) {
 }
