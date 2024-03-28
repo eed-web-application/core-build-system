@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.getAllMethodInCall;
 
-@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "component not found")
-public class ComponentNotFound extends ControllerLogicException {
+@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "command template not found")
+public class CommandTemplateNotFound extends ControllerLogicException {
     @Builder(builderMethodName = "byId")
-    public ComponentNotFound(Integer errorCode, String id) {
+    public CommandTemplateNotFound(Integer errorCode, String id) {
         super(errorCode,
-                String.format("The component with id '%s' has not been found", id),
+                String.format("The command template with id '%s' has not been found", id),
                 getAllMethodInCall()
         );
     }

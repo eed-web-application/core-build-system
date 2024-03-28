@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.getAllMethodInCall;
 
-@ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "component not found")
-public class ComponentNotFound extends ControllerLogicException {
-    @Builder(builderMethodName = "byId")
-    public ComponentNotFound(Integer errorCode, String id) {
+@ResponseStatus(value = HttpStatus.CONFLICT, reason = "component already exists")
+public class CommandTemplateAlreadyExists extends ControllerLogicException {
+    @Builder(builderMethodName = "byName")
+    public CommandTemplateAlreadyExists(Integer errorCode, String name) {
         super(errorCode,
-                String.format("The component with id '%s' has not been found", id),
+                String.format("The command template with name '%s' already exists", name),
                 getAllMethodInCall()
         );
     }

@@ -6,29 +6,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 
-import java.util.List;
 import java.util.Set;
 
 @Builder(toBuilder = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Define details for create a new component")
-public record NewComponentDTO(
+public record NewCommandTemplateDTO(
         @NotEmpty
         @Schema(description = "The name of the component")
         String name,
-
+        @NotEmpty
         @Schema(description = "The description of the component")
         String description,
         @NotEmpty
-        @Schema(description = "The version of the component")
-        String version,
-        @Schema(description = "The list of unique identifier of the components that this component depends on.")
-        Set<String> dependOnComponentIds,
+        @Schema(description = "The parameter used by the command")
+        Set<CommandTemplateParameterDTO> parameters,
         @NotEmpty
-        @Schema(description = "The list command template instances to execute to build the component.")
-        List<CommandTemplateInstanceDTO> commandTemplatesInstances,
-        @Schema(description = "The list of command templates that the component will use.")
-        List<CommandTemplateDTO> commandTemplates
+        @Schema(description = "Those are the list of the action that the command will take")
+        Set<ExecutionPipelineDTO> commandExecutionsLayers
 ) {
 }

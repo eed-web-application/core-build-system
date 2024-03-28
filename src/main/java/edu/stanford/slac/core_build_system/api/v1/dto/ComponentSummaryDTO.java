@@ -13,18 +13,12 @@ import java.util.Set;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Define the single component")
-public record ComponentDTO(
+public record ComponentSummaryDTO(
         @Schema(description = "The unique identifier of the component")
         String id,
         @Schema(description = "The name of the component")
         String name,
         @Schema(description = "The description of the component")
-        String description,
-        @Schema(description = "The URL of the component [src, artifact, etc.]")
-        String url,
-        @Schema(description = "The list of unique identifier of the components that this component depends on.")
-        Set<String> dependOnComponentIds,
-        @Schema(description = "The list command template instances to execute to build the component.")
-        Set<CommandTemplateInstanceDTO> commandTemplatesInstances
+        String description
 ) {
 }
