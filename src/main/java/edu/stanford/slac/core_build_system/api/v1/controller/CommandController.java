@@ -28,7 +28,7 @@ public class CommandController {
     )
     @Operation(summary = "Create a new component")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResultResponse<String> create(
+    public ApiResultResponse<String> createCommand(
             @RequestBody @Valid NewCommandTemplateDTO newCommandTemplateDTO
     ) throws Exception {
         return ApiResultResponse.of(
@@ -41,7 +41,7 @@ public class CommandController {
     )
     @Operation(summary = "List all command templates")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<List<CommandTemplateSummaryDTO>> listAllComponent() throws Exception {
+    public ApiResultResponse<List<CommandTemplateSummaryDTO>> listAllCommand() throws Exception {
         return ApiResultResponse.of(
                 commandTemplateService.findAll()
         );
@@ -53,7 +53,7 @@ public class CommandController {
     )
     @Operation(summary = "List all command templates")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<CommandTemplateDTO> findById(
+    public ApiResultResponse<CommandTemplateDTO> findCommandById(
             @PathVariable String id
     ) throws Exception {
         return ApiResultResponse.of(
@@ -67,7 +67,7 @@ public class CommandController {
     )
     @Operation(summary = "Update a command template by its unique identifier")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<Boolean> updateById(
+    public ApiResultResponse<Boolean> updateCommandById(
             @PathVariable String id,
             @RequestBody @Valid UpdateCommandTemplateDTO  updateComponentDTO) throws Exception {
         commandTemplateService.updateById(id, updateComponentDTO);
@@ -82,7 +82,7 @@ public class CommandController {
     )
     @Operation(summary = "Return a command template by its unique identifier")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<Boolean> deleteById(
+    public ApiResultResponse<Boolean> deleteCommandById(
             @PathVariable String id) throws Exception {
         commandTemplateService.deleteById(id);
         return ApiResultResponse.of(
