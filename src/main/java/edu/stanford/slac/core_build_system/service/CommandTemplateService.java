@@ -91,7 +91,7 @@ public class CommandTemplateService {
                         .errorCode(-1)
                         .errorMessage("The command template is in use by components")
                         .build(),
-                () -> componentRepository.existsByCommandTemplatesInstances_IdContains(id)
+                () -> !componentRepository.existsByCommandTemplatesInstances_IdContains(id)
         );
         wrapCatch(
                 () -> {commandTemplateRepository.deleteById(id); return null;},
