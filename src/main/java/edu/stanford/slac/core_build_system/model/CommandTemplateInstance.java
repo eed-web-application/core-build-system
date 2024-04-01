@@ -10,14 +10,19 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
 @AllArgsConstructor
 @EqualsAndHashCode
 public class CommandTemplateInstance{
-
+        /**
+         * The id of the command
+         */
         private String id;
-
-        private List<CommandTemplateInstanceParameter> parameters;
+        /**
+         * The parameter/values map
+         */
+        private Map<String, String> parameters;
 }

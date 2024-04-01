@@ -19,6 +19,8 @@ public record NewCommandTemplateDTO(
         @NotEmpty
         @Schema(description = "The description of the component")
         String description,
+        @Schema(description = "The list of the component that this component depend on")
+        Set<String> dependOnComponentIds,
         @NotEmpty
         @Schema(description = "The parameter used by the command")
         Set<CommandTemplateParameterDTO> parameters,

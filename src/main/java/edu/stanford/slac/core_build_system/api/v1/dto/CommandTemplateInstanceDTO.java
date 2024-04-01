@@ -17,6 +17,6 @@ public record CommandTemplateInstanceDTO(
         @Schema(description = "The id of the component")
         String id,
         @Schema(description = "The parameter/values map")
-        List<CommandTemplateInstanceParameterDTO> parameters
+        Map<String, String> parameters
 ) {
 }

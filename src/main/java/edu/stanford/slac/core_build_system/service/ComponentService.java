@@ -60,7 +60,7 @@ public class ComponentService {
                     );
 
                     // check for the validity of the parameters for the command template
-                    var parameterNames = templateInstance.parameters().stream().map(CommandTemplateInstanceParameterDTO::name).toList();
+                    var parameterNames = templateInstance.parameters().keySet().stream().toList();
                     assertion(
                             ControllerLogicException.builder()
                                     .errorCode(-3)
