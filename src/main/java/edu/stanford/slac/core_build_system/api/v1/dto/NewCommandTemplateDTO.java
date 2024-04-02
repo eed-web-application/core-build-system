@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 
+import java.util.List;
 import java.util.Set;
 
 @Builder(toBuilder = true)
@@ -19,6 +20,8 @@ public record NewCommandTemplateDTO(
         @NotEmpty
         @Schema(description = "The description of the component")
         String description,
+        @Schema(description = "The list of the component that this component depend on")
+        Set<String> dependOnComponents,
         @NotEmpty
         @Schema(description = "The parameter used by the command")
         Set<CommandTemplateParameterDTO> parameters,

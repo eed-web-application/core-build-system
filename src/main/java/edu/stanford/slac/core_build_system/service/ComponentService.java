@@ -13,11 +13,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.assertion;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
+import static java.util.Collections.emptyList;
 
 @Service
 @Validated
@@ -48,29 +51,34 @@ public class ComponentService {
         );
 
         //check if the command templates exists
-        newComponentDTO.commandTemplatesInstances().forEach(
-                templateInstance -> {
-                    // check for the existence of the command template
-                    assertion(
-                            ControllerLogicException.builder()
-                                    .errorCode(-2)
-                                    .errorMessage("The command template %s does not exist".formatted(templateInstance.id()))
-                                    .build(),
-                            () -> commandTemplateRepository.existsById(templateInstance.id())
-                    );
+        Objects.requireNonNullElse
+                        (
+                                newComponentDTO.commandTemplatesInstances(),
+                                Collections.<CommandTemplateInstanceDTO>emptyList()
+                        )
+                .forEach(
+                        templateInstance -> {
+                            // check for the existence of the command template
+                            assertion(
+                                    ControllerLogicException.builder()
+                                            .errorCode(-2)
+                                            .errorMessage("The command template %s does not exist".formatted(templateInstance.id()))
+                                            .build(),
+                                    () -> commandTemplateRepository.existsById(templateInstance.id())
+                            );
 
-                    // check for the validity of the parameters for the command template
-                    var parameterNames = templateInstance.parameters().stream().map(CommandTemplateInstanceParameterDTO::name).toList();
-                    assertion(
-                            ControllerLogicException.builder()
-                                    .errorCode(-3)
-                                    .errorMessage("One or more parameters '%s' are not valid for the command template".formatted(String.join(", ", parameterNames)))
-                                    .build(),
-                            () -> commandTemplateRepository.existsByIdAndParameters_NameIn(templateInstance.id(),parameterNames)
-                    );
-                }
+                            // check for the validity of the parameters for the command template
+                            var parameterNames = templateInstance.parameters().keySet().stream().toList();
+                            assertion(
+                                    ControllerLogicException.builder()
+                                            .errorCode(-3)
+                                            .errorMessage("One or more parameters '%s' are not valid for the command template".formatted(String.join(", ", parameterNames)))
+                                            .build(),
+                                    () -> commandTemplateRepository.existsByIdAndParameters_NameIn(templateInstance.id(), parameterNames)
+                            );
+                        }
 
-        );
+                );
 
         // create a new component
         var savedComponent = wrapCatch(

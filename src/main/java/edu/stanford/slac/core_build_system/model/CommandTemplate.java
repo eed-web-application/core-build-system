@@ -24,6 +24,7 @@ public class CommandTemplate {
     private String id;
     private String name;
     private String description;
+    private Set<String> dependOnComponents;
     private Set<CommandTemplateParameter> parameters;
     /**
      * The list of the action that the command will take.
