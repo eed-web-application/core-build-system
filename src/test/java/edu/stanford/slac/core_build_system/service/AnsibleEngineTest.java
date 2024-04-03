@@ -3,14 +3,12 @@ package edu.stanford.slac.core_build_system.service;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.model.CommandTemplate;
 import edu.stanford.slac.core_build_system.model.Component;
-import edu.stanford.slac.core_build_system.repository.CommandTemplateRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
 import edu.stanford.slac.core_build_system.service.engine.AnsibleEngineBuilder;
 import edu.stanford.slac.core_build_system.service.engine.DockerEngineBuilder;
 import edu.stanford.slac.core_build_system.service.engine.EngineBuilder;
 import edu.stanford.slac.core_build_system.service.engine.EngineFactory;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +33,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles({"test"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class DockerEngineTest {
+public class AnsibleEngineTest {
     @Autowired
     MongoTemplate mongoTemplate;
     @Autowired
@@ -62,6 +60,7 @@ public class DockerEngineTest {
                         .commandTemplates(
                                 List.of(
                                         CommandTemplateDTO.builder()
+                                                .name("update_package_manager")
                                                 .commandExecutionsLayers(
                                                         Set.of(
                                                                 ExecutionPipelineDTO.builder()
@@ -148,22 +147,24 @@ public class DockerEngineTest {
     @Test
     public void testBaseDockerCreation() {
         var component = componentRepository.findById(wgetToolComponentId).get();
-        String dockerfileUbuntuContent = engineFactory.getEngineBuilder("docker")
+        String ansibleReceipt = engineFactory.getEngineBuilder("ansible")
                 .addComponent(component)
-                .addBuilderSpec(DockerEngineBuilder.SPEC_OS_TYPE, "ubuntu")
+                .addBuilderSpec(AnsibleEngineBuilder.SPEC_OS_TYPE, "ubuntu")
+                .addBuilderSpec(AnsibleEngineBuilder.SPEC_HOST, "192.168.1.1")
                 .build();
-        assertThat(dockerfileUbuntuContent).isNotNull();
-        assertThat(dockerfileUbuntuContent).contains("FROM ubuntu:latest");
-        assertThat(dockerfileUbuntuContent).contains("RUN apt-get update");
-        assertThat(dockerfileUbuntuContent).contains("RUN apt-get install -y wget");
+        assertThat(ansibleReceipt).isNotNull();
+        assertThat(ansibleReceipt).contains("- hosts: 192.168.1.1");
+        assertThat(ansibleReceipt).contains("apt-get update");
+        assertThat(ansibleReceipt).contains("apt-get install -y wget");
 
-        String dockerfileRedhatContent = engineFactory.getEngineBuilder("docker")
+        String dockerfileRedhatContent = engineFactory.getEngineBuilder("ansible")
                 .addComponent(component)
                 .addBuilderSpec(DockerEngineBuilder.SPEC_OS_TYPE, "redhat")
+                .addBuilderSpec(AnsibleEngineBuilder.SPEC_HOST, "192.168.1.2")
                 .build();
-        assertThat(dockerfileUbuntuContent).isNotNull();
-        assertThat(dockerfileRedhatContent).contains("FROM redhat:latest");
-        assertThat(dockerfileRedhatContent).contains("RUN yum update");
-        assertThat(dockerfileRedhatContent).contains("RUN yum install -y wget");
+        assertThat(ansibleReceipt).isNotNull();
+        assertThat(ansibleReceipt).contains("- hosts: 192.168.1.1");
+        assertThat(dockerfileRedhatContent).contains("yum update");
+        assertThat(dockerfileRedhatContent).contains("yum install -y wget");
     }
 }

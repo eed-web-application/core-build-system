@@ -9,11 +9,14 @@ import edu.stanford.slac.core_build_system.model.ExecutionPipeline;
 import edu.stanford.slac.core_build_system.repository.CommandTemplateRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
+@org.springframework.stereotype.Component("docker")
+@Scope("prototype")
 @RequiredArgsConstructor
 public class DockerEngineBuilder implements EngineBuilder {
     public static final String SPEC_OS_TYPE = "osType";

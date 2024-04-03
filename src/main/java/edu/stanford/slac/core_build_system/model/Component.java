@@ -24,8 +24,8 @@ public class Component {
     private String id;
     private String name;
     private String version;
-
-    private Set<String> dependOnComponentIds;
+    @Builder.Default
+    private Set<String> dependOnComponentIds = new java.util.HashSet<>();
     private List<CommandTemplateInstance> commandTemplatesInstances;
     private List<CommandTemplate> commandTemplates;
     /**
