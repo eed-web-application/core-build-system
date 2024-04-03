@@ -147,24 +147,24 @@ public class AnsibleEngineTest {
     @Test
     public void testBaseDockerCreation() {
         var component = componentRepository.findById(wgetToolComponentId).get();
-        String ansibleReceipt = engineFactory.getEngineBuilder("ansible")
+        String ansibleReceiptUbuntu = engineFactory.getEngineBuilder("ansible")
                 .addComponent(component)
                 .addBuilderSpec(AnsibleEngineBuilder.SPEC_OS_TYPE, "ubuntu")
                 .addBuilderSpec(AnsibleEngineBuilder.SPEC_HOST, "192.168.1.1")
                 .build();
-        assertThat(ansibleReceipt).isNotNull();
-        assertThat(ansibleReceipt).contains("- hosts: 192.168.1.1");
-        assertThat(ansibleReceipt).contains("apt-get update");
-        assertThat(ansibleReceipt).contains("apt-get install -y wget");
+        assertThat(ansibleReceiptUbuntu).isNotNull();
+        assertThat(ansibleReceiptUbuntu).contains("- hosts: 192.168.1.1");
+        assertThat(ansibleReceiptUbuntu).contains("apt-get update");
+        assertThat(ansibleReceiptUbuntu).contains("apt-get install -y wget");
 
-        String dockerfileRedhatContent = engineFactory.getEngineBuilder("ansible")
+        String ansibleReceiptRedhat = engineFactory.getEngineBuilder("ansible")
                 .addComponent(component)
                 .addBuilderSpec(DockerEngineBuilder.SPEC_OS_TYPE, "redhat")
                 .addBuilderSpec(AnsibleEngineBuilder.SPEC_HOST, "192.168.1.2")
                 .build();
-        assertThat(ansibleReceipt).isNotNull();
-        assertThat(ansibleReceipt).contains("- hosts: 192.168.1.1");
-        assertThat(dockerfileRedhatContent).contains("yum update");
-        assertThat(dockerfileRedhatContent).contains("yum install -y wget");
+        assertThat(ansibleReceiptRedhat).isNotNull();
+        assertThat(ansibleReceiptRedhat).contains("- hosts: 192.168.1.2");
+        assertThat(ansibleReceiptRedhat).contains("yum update");
+        assertThat(ansibleReceiptRedhat).contains("yum install -y wget");
     }
 }
