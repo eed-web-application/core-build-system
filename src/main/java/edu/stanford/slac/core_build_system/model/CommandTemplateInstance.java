@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -19,5 +20,5 @@ public class CommandTemplateInstance{
 
         private String id;
 
-        private List<CommandTemplateInstanceParameter> parameters;
+        private Map<String, String> parameters;
 }

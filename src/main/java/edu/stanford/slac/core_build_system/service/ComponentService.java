@@ -7,14 +7,15 @@ import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.repository.CommandTemplateRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
+import edu.stanford.slac.core_build_system.service.engine.EngineFactory;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.io.ByteArrayInputStream;
+import java.util.*;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.assertion;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
@@ -23,9 +24,10 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 @Validated
 @AllArgsConstructor
 public class ComponentService {
-    ComponentMapper componentMapper;
-    ComponentRepository componentRepository;
-    CommandTemplateRepository commandTemplateRepository;
+    private final ComponentMapper componentMapper;
+    private final ComponentRepository componentRepository;
+    private final CommandTemplateRepository commandTemplateRepository;
+    private final EngineFactory engineFactory;
 
     /**
      * Create a new component
@@ -48,29 +50,34 @@ public class ComponentService {
         );
 
         //check if the command templates exists
-        newComponentDTO.commandTemplatesInstances().forEach(
-                templateInstance -> {
-                    // check for the existence of the command template
-                    assertion(
-                            ControllerLogicException.builder()
-                                    .errorCode(-2)
-                                    .errorMessage("The command template %s does not exist".formatted(templateInstance.id()))
-                                    .build(),
-                            () -> commandTemplateRepository.existsById(templateInstance.id())
-                    );
+        Objects.requireNonNullElse
+                        (
+                                newComponentDTO.commandTemplatesInstances(),
+                                Collections.<CommandTemplateInstanceDTO>emptyList()
+                        )
+                .forEach(
+                        templateInstance -> {
+                            // check for the existence of the command template
+                            assertion(
+                                    ControllerLogicException.builder()
+                                            .errorCode(-2)
+                                            .errorMessage("The command template %s does not exist".formatted(templateInstance.id()))
+                                            .build(),
+                                    () -> commandTemplateRepository.existsById(templateInstance.id())
+                            );
 
-                    // check for the validity of the parameters for the command template
-                    var parameterNames = templateInstance.parameters().stream().map(CommandTemplateInstanceParameterDTO::name).toList();
-                    assertion(
-                            ControllerLogicException.builder()
-                                    .errorCode(-3)
-                                    .errorMessage("One or more parameters '%s' are not valid for the command template".formatted(String.join(", ", parameterNames)))
-                                    .build(),
-                            () -> commandTemplateRepository.existsByIdAndParameters_NameIn(templateInstance.id(),parameterNames)
-                    );
-                }
+                            // check for the validity of the parameters for the command template
+                            var parameterNames = templateInstance.parameters().keySet().stream().toList();
+                            assertion(
+                                    ControllerLogicException.builder()
+                                            .errorCode(-3)
+                                            .errorMessage("One or more parameters '%s' are not valid for the command template".formatted(String.join(", ", parameterNames)))
+                                            .build(),
+                                    () -> commandTemplateRepository.existsByIdAndParameters_NameIn(templateInstance.id(), parameterNames)
+                            );
+                        }
 
-        );
+                );
 
         // create a new component
         var savedComponent = wrapCatch(
@@ -167,5 +174,42 @@ public class ComponentService {
                 },
                 -3
         );
+    }
+
+    /**
+     * Create an artifact by engine name and component list
+     *
+     * @param engineName   The name of the engine
+     * @param componentIds The list of component unique identifiers
+     * @param buildSpecs
+     * @return The artifact
+     */
+    public FileResourceDTO createArtifactByEngineNameAndComponentList(String engineName, List<String> componentIds, Map<String, String> buildSpecs) {
+        var components = wrapCatch(
+                () -> componentRepository.findAllById(componentIds),
+                -1
+        );
+        var engineBuilder = wrapCatch(
+                () -> engineFactory.getEngineBuilder(engineName),
+                -1
+        );
+        components.forEach(engineBuilder::addComponent);
+        buildSpecs.forEach(engineBuilder::addBuilderSpec);
+        String content = engineBuilder.build();
+        return FileResourceDTO
+                .builder()
+                .length(content.length())
+                .fileStream(new ByteArrayInputStream(content.getBytes()))
+                .fileName(engineName.equals("docker")?"Dockerfile":"ansible.yml")
+                .build();
+    }
+
+    /**
+     * Get the list of engine names
+     *
+     * @return The list of engine names
+     */
+    public Set<String> getEngineNames(){
+        return engineFactory.getEngineNames();
     }
 }

@@ -27,7 +27,7 @@ public class ComponentController {
     )
     @Operation(summary = "Create a new component")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResultResponse<String> create(
+    public ApiResultResponse<String> createNewComponent(
             @RequestBody @Valid NewComponentDTO newComponentDTO
     ) throws Exception {
         return ApiResultResponse.of(
@@ -41,7 +41,7 @@ public class ComponentController {
     )
     @Operation(summary = "Find a component by an id")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<ComponentDTO> findById(
+    public ApiResultResponse<ComponentDTO> findComponentById(
            @PathVariable String id
     ) throws Exception {
         return ApiResultResponse.of(
@@ -55,7 +55,7 @@ public class ComponentController {
     )
     @Operation(summary = "Delete a component by his id")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<Boolean> deleteById(
+    public ApiResultResponse<Boolean> deleteComponentById(
             @PathVariable String id
     ) throws Exception {
         componentService.deleteById(id);
@@ -68,7 +68,7 @@ public class ComponentController {
     )
     @Operation(summary = "Delete a component by his id")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<Boolean> updateById(
+    public ApiResultResponse<Boolean> updateComponentById(
             @PathVariable String id,
             @RequestBody @Valid UpdateComponentDTO updateComponentDTO
     ) throws Exception {

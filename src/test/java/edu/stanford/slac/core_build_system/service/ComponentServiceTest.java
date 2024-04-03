@@ -18,6 +18,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -130,17 +131,9 @@ public class ComponentServiceTest {
                                                 .builder()
                                                 .id(downloadCommandId)
                                                 .parameters(
-                                                        List.of(
-                                                                CommandTemplateInstanceParameterDTO
-                                                                        .builder()
-                                                                        .name("source_url")
-                                                                        .value("https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.zip")
-                                                                        .build(),
-                                                                CommandTemplateInstanceParameterDTO
-                                                                        .builder()
-                                                                        .name("destination_dir")
-                                                                        .value("/tmp/build/")
-                                                                        .build()
+                                                        Map.of(
+                                                                "source_url", "https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.zip",
+                                                                "destination_dir", "/tmp/build/"
                                                         )
                                                 )
                                                 .build()
