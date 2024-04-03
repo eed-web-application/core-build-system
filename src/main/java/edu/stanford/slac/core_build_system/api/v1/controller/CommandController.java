@@ -28,7 +28,7 @@ public class CommandController {
     )
     @Operation(summary = "Create a new component")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResultResponse<String> createCommand(
+    public ApiResultResponse<String> createNewCommand(
             @RequestBody @Valid NewCommandTemplateDTO newCommandTemplateDTO
     ) throws Exception {
         return ApiResultResponse.of(

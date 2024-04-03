@@ -7,28 +7,27 @@ import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.repository.CommandTemplateRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
+import edu.stanford.slac.core_build_system.service.engine.EngineFactory;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.io.ByteArrayInputStream;
+import java.util.*;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.assertion;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
-import static java.util.Collections.emptyList;
 
 @Service
 @Validated
 @AllArgsConstructor
 public class ComponentService {
-    ComponentMapper componentMapper;
-    ComponentRepository componentRepository;
-    CommandTemplateRepository commandTemplateRepository;
+    private final ComponentMapper componentMapper;
+    private final ComponentRepository componentRepository;
+    private final CommandTemplateRepository commandTemplateRepository;
+    private final EngineFactory engineFactory;
 
     /**
      * Create a new component
@@ -175,5 +174,42 @@ public class ComponentService {
                 },
                 -3
         );
+    }
+
+    /**
+     * Create an artifact by engine name and component list
+     *
+     * @param engineName   The name of the engine
+     * @param componentIds The list of component unique identifiers
+     * @param buildSpecs
+     * @return The artifact
+     */
+    public FileResourceDTO createArtifactByEngineNameAndComponentList(String engineName, List<String> componentIds, Map<String, String> buildSpecs) {
+        var components = wrapCatch(
+                () -> componentRepository.findAllById(componentIds),
+                -1
+        );
+        var engineBuilder = wrapCatch(
+                () -> engineFactory.getEngineBuilder(engineName),
+                -1
+        );
+        components.forEach(engineBuilder::addComponent);
+        buildSpecs.forEach(engineBuilder::addBuilderSpec);
+        String content = engineBuilder.build();
+        return FileResourceDTO
+                .builder()
+                .length(content.length())
+                .fileStream(new ByteArrayInputStream(content.getBytes()))
+                .fileName(engineName.equals("docker")?"Dockerfile":"ansible.yml")
+                .build();
+    }
+
+    /**
+     * Get the list of engine names
+     *
+     * @return The list of engine names
+     */
+    public Set<String> getEngineNames(){
+        return engineFactory.getEngineNames();
     }
 }
