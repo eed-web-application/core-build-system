@@ -23,6 +23,7 @@ import java.util.Set;
 public class Component {
     private String id;
     private String name;
+    private String url;
     private String version;
     @Builder.Default
     private Set<String> dependOnComponentIds = new java.util.HashSet<>();

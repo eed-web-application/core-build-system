@@ -18,6 +18,8 @@ public record ComponentSummaryDTO(
         String id,
         @Schema(description = "The name of the component")
         String name,
+        @Schema(description = "The URL of the component [src, artifact, etc.]")
+        String url,
         @Schema(description = "The description of the component")
         String description
 ) {
