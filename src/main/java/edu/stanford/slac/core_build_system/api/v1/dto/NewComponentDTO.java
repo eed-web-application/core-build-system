@@ -15,20 +15,21 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Define details for create a new component")
 public record NewComponentDTO(
-        @NotEmpty
         @Schema(description = "The name of the component")
-        String name,
-        @Schema(description = "The URL of the component [src, artifact, etc.]")
-        String url,
+        @NotEmpty String name,
         @Schema(description = "The description of the component")
-        String description,
-        @Schema(description = "The version of the component")
-        String version,
+        @NotEmpty String description,
+        @NotEmpty String version,
+        @Schema(description = "The organization of the component")
+        @NotEmpty String organization,
+        @Schema(description = "The URL of the component [src, artifact, etc.]")
+        @NotEmpty String url,
+        @Schema(description = "The approval rule of the component")
+        @NotEmpty String approvalRule,
+        @Schema(description = "The testing criteria of the component")
+        @NotEmpty String testingCriteria,
+        @NotEmpty Set<String> approvalIdentity,
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
-        Set<String> dependOnComponentIds,
-        @Schema(description = "The list command template instances to execute to build the component.")
-        List<CommandTemplateInstanceDTO> commandTemplatesInstances,
-        @Schema(description = "The list of command templates that the component will use.")
-        List<CommandTemplateDTO> commandTemplates
+        @NotEmpty Set<ComponentDependencyDTO> dependOn
 ) {
 }

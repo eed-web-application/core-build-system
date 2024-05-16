@@ -62,39 +62,39 @@ public class DockerEngineBuilder implements EngineBuilder {
             return;
         }
 
-        // Process dependencies first
-        if (component.getCommandTemplatesInstances() != null) {
-            for (CommandTemplateInstance instance : component.getCommandTemplatesInstances()) {
-                CommandTemplate template = commandTemplateRepository
-                        .findById(instance.getId())
-                        .orElseThrow(
-                                () -> CommandTemplateNotFound.byId()
-                                        .errorCode(-1)
-                                        .id(instance.getId())
-                                        .build()
-                        );
-                // Process dependent components
-                if (template.getDependOnComponents() != null) {
-                    for (String componentId : template.getDependOnComponents()) {
-                        Component dependOnComponent = componentRepository
-                                .findById(componentId)
-                                .orElseThrow(
-                                        () -> ComponentNotFound.byId()
-                                                .errorCode(-2)
-                                                .id(componentId)
-                                                .build()
-                                );
-                        processComponent(dependOnComponent, dockerfile, processedComponents);
-                    }
-                }
-                // Now, append the current component's commands
-                appendCommandsFromTemplate(template, instance, dockerfile);
-            }
-        }
-        // Assuming component.getCommandTemplates() directly gives CommandTemplate objects
-        if(component.getCommandTemplates()!=null) {
-            component.getCommandTemplates().forEach(commandTemplate -> appendCommandsFromTemplate(commandTemplate, null, dockerfile));
-        }
+//        // Process dependencies first
+//        if (component.getCommandTemplatesInstances() != null) {
+//            for (CommandTemplateInstance instance : component.getCommandTemplatesInstances()) {
+//                CommandTemplate template = commandTemplateRepository
+//                        .findById(instance.getId())
+//                        .orElseThrow(
+//                                () -> CommandTemplateNotFound.byId()
+//                                        .errorCode(-1)
+//                                        .id(instance.getId())
+//                                        .build()
+//                        );
+//                // Process dependent components
+//                if (template.getDependOnComponents() != null) {
+//                    for (String componentId : template.getDependOnComponents()) {
+//                        Component dependOnComponent = componentRepository
+//                                .findById(componentId)
+//                                .orElseThrow(
+//                                        () -> ComponentNotFound.byId()
+//                                                .errorCode(-2)
+//                                                .id(componentId)
+//                                                .build()
+//                                );
+//                        processComponent(dependOnComponent, dockerfile, processedComponents);
+//                    }
+//                }
+//                // Now, append the current component's commands
+//                appendCommandsFromTemplate(template, instance, dockerfile);
+//            }
+//        }
+//        // Assuming component.getCommandTemplates() directly gives CommandTemplate objects
+//        if(component.getCommandTemplates()!=null) {
+//            component.getCommandTemplates().forEach(commandTemplate -> appendCommandsFromTemplate(commandTemplate, null, dockerfile));
+//        }
     }
 
     private void appendCommandsFromTemplate(CommandTemplate template, CommandTemplateInstance instance, StringBuilder dockerfile) {
