@@ -23,12 +23,20 @@ import java.util.Set;
 public class Component {
     private String id;
     private String name;
+    private String organization;
+    private String description;
     private String url;
+    private String approvalRule;
+    private List<String> approvalIdentity;
+    private String testingCriteria;
+    private String buildInstructions;
+    /**
+     * The version of the component.
+     * Version of component schema (NOT the repo version)
+     */
     private String version;
     @Builder.Default
-    private Set<String> dependOnComponentIds = new java.util.HashSet<>();
-    private List<CommandTemplateInstance> commandTemplatesInstances;
-    private List<CommandTemplate> commandTemplates;
+    private Set<ComponentDependency> dependOnComponentIds = new java.util.HashSet<>();
     /**
      * The date and time when the activity was created.
      * This field is automatically populated with the creation date and time, using @CreatedDate annotation.
