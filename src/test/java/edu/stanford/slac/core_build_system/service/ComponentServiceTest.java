@@ -125,44 +125,6 @@ public class ComponentServiceTest {
                         .name("boost libraries")
                         .description("boost libraries for c++ applications")
                         .version("1_82_0")
-                        .commandTemplatesInstances(
-                                List.of(
-                                        CommandTemplateInstanceDTO
-                                                .builder()
-                                                .id(downloadCommandId)
-                                                .parameters(
-                                                        Map.of(
-                                                                "source_url", "https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.zip",
-                                                                "destination_dir", "/tmp/build/"
-                                                        )
-                                                )
-                                                .build()
-                                )
-                        )
-                        .commandTemplates(
-                                List.of(
-                                        CommandTemplateDTO
-                                                .builder()
-                                                .commandExecutionsLayers(
-                                                        Set.of(
-                                                                ExecutionPipelineDTO
-                                                                        .builder()
-                                                                        .engine("shell")
-                                                                        .architecture(List.of("linux"))
-                                                                        .operatingSystem(List.of("ubuntu", "redhat"))
-                                                                        .executionCommands(
-                                                                                List.of(
-                                                                                        "unzip /tmp/build/boost_1_82_0.zip -d /tmp/build/",
-                                                                                        "cd /tmp/build/boost_1_82_0 && ./bootstrap.sh --prefix=/usr/local",
-                                                                                        "cd /tmp/build/boost_1_82_0 && ./b2 install"
-                                                                                )
-                                                                        )
-                                                                        .build()
-                                                        )
-                                                )
-                                                .build()
-                                )
-                        )
                         .build()
         );
         assertThat(boostComponentId).isNotNull();

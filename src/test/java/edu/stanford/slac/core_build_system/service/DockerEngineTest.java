@@ -59,36 +59,6 @@ public class DockerEngineTest {
                 NewComponentDTO.builder()
                         .name("install_component")
                         .description("Initialize the package manager and install the package")
-                        .commandTemplates(
-                                List.of(
-                                        CommandTemplateDTO.builder()
-                                                .commandExecutionsLayers(
-                                                        Set.of(
-                                                                ExecutionPipelineDTO.builder()
-                                                                        .engine("shell")
-                                                                        .architecture(List.of("linux"))
-                                                                        .operatingSystem(List.of("ubuntu", "debian"))
-                                                                        .executionCommands(
-                                                                                List.of(
-                                                                                        "apt-get update"
-                                                                                )
-                                                                        )
-                                                                        .build(),
-                                                                ExecutionPipelineDTO.builder()
-                                                                        .engine("shell")
-                                                                        .architecture(List.of("linux"))
-                                                                        .operatingSystem(List.of("redhat", "centos"))
-                                                                        .executionCommands(
-                                                                                List.of(
-                                                                                        "yum update"
-                                                                                )
-                                                                        )
-                                                                        .build()
-                                                        )
-                                                )
-                                                .build()
-                                )
-                        )
                         .build()
         );
         assertThat(installComponentId).isNotNull();
@@ -131,15 +101,6 @@ public class DockerEngineTest {
                 NewComponentDTO.builder()
                         .name("WgetTool")
                         .description("Manages the installation of the wget tool.")
-                        .commandTemplatesInstances(
-                                List.of(
-                                        CommandTemplateInstanceDTO.builder()
-                                                // the install command depends on the install_package component
-                                                .id(newInstallCommandId)
-                                                .parameters(Map.of("package_name", "wget"))
-                                                .build()
-                                )
-                        )
                         .build()
         );
         assertThat(wgetToolComponentId).isNotNull();
