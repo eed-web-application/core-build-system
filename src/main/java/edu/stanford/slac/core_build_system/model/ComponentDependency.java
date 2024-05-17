@@ -11,5 +11,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 public class ComponentDependency {
     private String componentId;
-    private String tagName;
+    private String version;
 }

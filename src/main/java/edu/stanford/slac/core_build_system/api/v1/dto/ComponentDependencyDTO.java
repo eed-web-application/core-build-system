@@ -11,6 +11,6 @@ import lombok.Builder;
 @Schema(description = "Define the single component dependency")
 public record ComponentDependencyDTO(
         String componentName,
-        String tagName
+        String version
 ) {
 }

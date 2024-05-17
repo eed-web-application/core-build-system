@@ -9,5 +9,6 @@ import java.util.Optional;
 
 public interface ComponentRepository extends MongoRepository<Component, String> {
     boolean existsByNameAndVersion(String name, String version);
+    boolean existsByDependOn_ComponentIdContains(String componentId);
     Optional<Component> findByName(String name);
 }

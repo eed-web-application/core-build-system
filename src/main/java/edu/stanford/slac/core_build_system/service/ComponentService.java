@@ -5,6 +5,7 @@ import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentMapper;
 import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
+import edu.stanford.slac.core_build_system.model.ComponentDependency;
 import edu.stanford.slac.core_build_system.repository.CommandTemplateRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
 import edu.stanford.slac.core_build_system.service.engine.EngineFactory;
@@ -49,15 +50,13 @@ public class ComponentService {
                         newComponentDTO.version()
                 )
         );
-
+        var componentToSave = componentMapper.toModel(newComponentDTO);
         // check dependency
-        validateDependencies(Optional.empty(), newComponentDTO.dependOn());
+        validateDependencies(Optional.empty(), componentToSave.getDependOn());
 
         // create a new component
         var savedComponent = wrapCatch(
-                () -> componentRepository.save(
-                        componentMapper.toModel(newComponentDTO)
-                ),
+                () -> componentRepository.save(componentToSave),
                 -1
         );
         return savedComponent.getId();
@@ -102,14 +101,13 @@ public class ComponentService {
                 -1
         ).orElseThrow(() -> ComponentNotFound.byId().errorCode(-2).id(id).build());
 
+        var componentUpdated = componentMapper.updateModel(updateComponentDTO, componentToUpdate);
         // check for depend on itself
-        validateDependencies(Optional.of(id), updateComponentDTO.dependOn());
+        validateDependencies(Optional.of(id), componentUpdated.getDependOn());
 
         // update
         wrapCatch(
-                () -> componentRepository.save(
-                        componentMapper.updateModel(updateComponentDTO, componentToUpdate)
-                ),
+                () -> componentRepository.save(componentUpdated),
                 -1
         );
     }
@@ -130,7 +128,7 @@ public class ComponentService {
                         .errorCode(-2)
                         .errorMessage("The component is in use by other components")
                         .build(),
-                () -> !componentRepository.existsByDependOnComponentIdsContaining(id)
+                () -> !componentRepository.existsByDependOn_ComponentIdContains(id)
         );
         //delete
         wrapCatch(
@@ -184,7 +182,7 @@ public class ComponentService {
      *
      * @param dependOnComponent The list of dependencies
      */
-    private void validateDependencies(Optional<String> parentId, Set<ComponentDependencyDTO> dependOnComponent) {
+    private void validateDependencies(Optional<String> parentId, Set<ComponentDependency> dependOnComponent) {
         if (dependOnComponent == null || dependOnComponent.isEmpty()) return;
         // check cyclic dependency
         parentId.ifPresent(
@@ -193,11 +191,11 @@ public class ComponentService {
                                 .errorCode(-1)
                                 .errorMessage("The component cannot depend on itself")
                                 .build(),
-                        () -> dependOnComponent.stream().noneMatch(d -> d.componentId().compareToIgnoreCase(s) == 0)
+                        () -> dependOnComponent.stream().noneMatch(d -> d.getComponentId().compareToIgnoreCase(s) == 0)
                 )
         );
 
-        var dependOnComponentIds = dependOnComponent.stream().map(ComponentDependencyDTO::componentId).toList();
+        var dependOnComponentIds = dependOnComponent.stream().map(ComponentDependency::getComponentId).toList();
         dependOnComponentIds.forEach(
                 componentId -> {
                     assertion(

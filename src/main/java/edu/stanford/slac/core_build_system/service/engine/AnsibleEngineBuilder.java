@@ -78,22 +78,22 @@ public class AnsibleEngineBuilder implements EngineBuilder {
             return;
         }
 
-        if (component.getDependOnComponentIds() != null) {
-            component.getDependOnComponentIds().forEach(
-                    componentDependency -> {
-                        Component  dependentComponent = componentRepository
-                                .findById(componentDependency.getComponentId())
-                                .orElseThrow(
-                                        ()->ComponentNotFound
-                                                .byId()
-                                                .errorCode(-1)
-                                                .id(componentDependency.getComponentId())
-                                                .build()
-                                );
-                        processComponent(dependentComponent, playbook, processedComponents);
-                    }
-            );
-        }
+//        if (component.getDependOnComponentIds() != null) {
+//            component.getDependOnComponentIds().forEach(
+//                    componentDependency -> {
+//                        Component  dependentComponent = componentRepository
+//                                .findById(componentDependency.getComponentId())
+//                                .orElseThrow(
+//                                        ()->ComponentNotFound
+//                                                .byId()
+//                                                .errorCode(-1)
+//                                                .id(componentDependency.getComponentId())
+//                                                .build()
+//                                );
+//                        processComponent(dependentComponent, playbook, processedComponents);
+//                    }
+//            );
+//        }
 
         // Process command templates instances if they exist
 //        if (component.getCommandTemplatesInstances() != null) {

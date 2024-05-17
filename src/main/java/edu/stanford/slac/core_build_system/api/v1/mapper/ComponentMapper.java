@@ -1,18 +1,19 @@
 package edu.stanford.slac.core_build_system.api.v1.mapper;
 
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentSummaryDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.UpdateComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.model.Component;
+import edu.stanford.slac.core_build_system.model.ComponentDependency;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 
@@ -23,10 +24,11 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 public abstract class ComponentMapper {
     @Autowired
     private ComponentRepository componentRepository;
+    @Mapping(target = "dependOn", expression = "java(nameToId(newComponentDTO.dependOn()))")
     abstract public Component toModel(NewComponentDTO newComponentDTO);
     abstract public ComponentDTO toDTO(Component component);
     abstract public ComponentSummaryDTO toSummaryDTO(Component component);
-
+    @Mapping(target = "dependOn", expression = "java(nameToId(updateComponentDTO.dependOn()))")
     abstract public Component updateModel(UpdateComponentDTO updateComponentDTO, @MappingTarget Component componentToUpdate);
 
     /**
@@ -34,19 +36,25 @@ public abstract class ComponentMapper {
      * @param name The name of the component.
      * @return The id of the component.
      */
-    public String nameToId(String name) {
-        return wrapCatch(
+    public ComponentDependency nameToId(ComponentDependencyDTO dependency) {
+        String componentId = wrapCatch(
                 ()->
-                        componentRepository.findByName(name)
+                        componentRepository.findByName(dependency.componentName())
                                 .map(Component::getId)
                                 .orElseThrow(
                                         ()-> ComponentNotFound.byId()
-                                                .id(name)
+                                                .id(dependency.componentName())
                                                 .errorCode(-1)
                                                 .build()
                                 ),
                 -1
         );
+
+        return ComponentDependency
+                .builder()
+                .componentId(componentId)
+                .version(dependency.version())
+                .build();
     }
 
     /**
@@ -54,7 +62,7 @@ public abstract class ComponentMapper {
      * @param names The list of component names.
      * @return The list of component ids.
      */
-    public List<String> nameToId(List<String> names) {
-        return names.stream().map(this::nameToId).toList();
+    public Set<ComponentDependency> nameToId(Set<ComponentDependencyDTO> names) {
+        return names.stream().map(this::nameToId).collect(Collectors.toSet());
     }
 }
