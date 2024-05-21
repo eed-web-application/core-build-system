@@ -5,13 +5,10 @@ import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentDependency;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,12 +21,19 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 public abstract class ComponentMapper {
     @Autowired
     private ComponentRepository componentRepository;
+    @Mapping(target = "name", qualifiedByName = "sanitize-name")
     @Mapping(target = "dependOn", expression = "java(nameToId(newComponentDTO.dependOn()))")
     abstract public Component toModel(NewComponentDTO newComponentDTO);
     abstract public ComponentDTO toDTO(Component component);
     abstract public ComponentSummaryDTO toSummaryDTO(Component component);
+    @Mapping(target = "name", qualifiedByName = "sanitize-name")
     @Mapping(target = "dependOn", expression = "java(nameToId(updateComponentDTO.dependOn()))")
     abstract public Component updateModel(UpdateComponentDTO updateComponentDTO, @MappingTarget Component componentToUpdate);
+
+    @Named("sanitize-name")
+    public String sanitizeName(String name) {
+        return name.toLowerCase().trim().replace(" ", "-");
+    }
 
     /**
      * Convert the component name to the component id.
@@ -39,7 +43,7 @@ public abstract class ComponentMapper {
     public ComponentDependency nameToId(ComponentDependencyDTO dependency) {
         String componentId = wrapCatch(
                 ()->
-                        componentRepository.findByName(dependency.componentName())
+                        componentRepository.findByName(sanitizeName(dependency.componentName()))
                                 .map(Component::getId)
                                 .orElseThrow(
                                         ()-> ComponentNotFound.byId()
@@ -53,7 +57,7 @@ public abstract class ComponentMapper {
         return ComponentDependency
                 .builder()
                 .componentId(componentId)
-                .version(dependency.version())
+                .version(dependency.tagName())
                 .build();
     }
 
@@ -63,6 +67,7 @@ public abstract class ComponentMapper {
      * @return The list of component ids.
      */
     public Set<ComponentDependency> nameToId(Set<ComponentDependencyDTO> names) {
+        if(names == null) return Collections.emptySet();
         return names.stream().map(this::nameToId).collect(Collectors.toSet());
     }
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
 import java.util.List;
@@ -15,6 +16,8 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Define the single component")
 public record UpdateComponentDTO(
+        @Schema(description = "The unique name that identify of the component")
+        @NotNull String name,
         @Schema(description = "The description of the component")
         @NotEmpty String description,
         @NotEmpty String version,
@@ -28,6 +31,6 @@ public record UpdateComponentDTO(
         @NotEmpty String testingCriteria,
         @NotEmpty Set<String> approvalIdentity,
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
-        @NotEmpty Set<ComponentDependencyDTO> dependOn
+        Set<ComponentDependencyDTO> dependOn
 ) {
 }

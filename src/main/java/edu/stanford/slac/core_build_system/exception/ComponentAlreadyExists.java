@@ -12,7 +12,14 @@ public class ComponentAlreadyExists extends ControllerLogicException {
     @Builder(builderMethodName = "byNameAndVersion")
     public ComponentAlreadyExists(Integer errorCode, String name, String version) {
         super(errorCode,
-                String.format("The component with name '%s' and version '%s' already exists", name, version),
+                String.format("The component with name '%s' and tagName '%s' already exists", name, version),
+                getAllMethodInCall()
+        );
+    }
+    @Builder(builderMethodName = "byName")
+    public ComponentAlreadyExists(Integer errorCode, String name) {
+        super(errorCode,
+                String.format("The component with name '%s' already exists", name),
                 getAllMethodInCall()
         );
     }

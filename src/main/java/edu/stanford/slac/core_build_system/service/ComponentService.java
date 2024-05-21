@@ -38,19 +38,18 @@ public class ComponentService {
      * @return The unique identifier of the new component
      */
     public String create(@Valid NewComponentDTO newComponentDTO) {
+
+        var componentToSave = componentMapper.toModel(newComponentDTO);
         // check if there is a conflict
         assertion(
-                ComponentAlreadyExists.byNameAndVersion()
+                ComponentAlreadyExists.byName()
                         .errorCode(-1)
-                        .name(newComponentDTO.name())
-                        .version(newComponentDTO.version())
+                        .name(componentToSave.getName())
                         .build(),
-                () -> !componentRepository.existsByNameAndVersion(
-                        newComponentDTO.name(),
-                        newComponentDTO.version()
+                () -> !componentRepository.existsByName(
+                        componentToSave.getName()
                 )
         );
-        var componentToSave = componentMapper.toModel(newComponentDTO);
         // check dependency
         validateDependencies(Optional.empty(), componentToSave.getDependOn());
 
@@ -102,6 +101,19 @@ public class ComponentService {
         ).orElseThrow(() -> ComponentNotFound.byId().errorCode(-2).id(id).build());
 
         var componentUpdated = componentMapper.updateModel(updateComponentDTO, componentToUpdate);
+
+        // check if there is a conflict with anther component
+        assertion(
+                ComponentAlreadyExists.byName()
+                        .errorCode(-1)
+                        .name(componentUpdated.getName())
+                        .build(),
+                () -> !componentRepository.existsByNameAndIdIsNot(
+                        componentUpdated.getName(),
+                        componentUpdated.getId()
+                )
+        );
+
         // check for depend on itself
         validateDependencies(Optional.of(id), componentUpdated.getDependOn());
 

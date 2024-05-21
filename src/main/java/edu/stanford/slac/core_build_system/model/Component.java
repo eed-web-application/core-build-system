@@ -25,8 +25,8 @@ public class Component {
     private String name;
     private String description;
     /**
-     * The version of the component.
-     * Version of component schema (NOT the repo version)
+     * The tagName of the component.
+     * Version of component schema (NOT the repo tagName)
      */
     private String version;
     private String organization;
