@@ -5,9 +5,11 @@ import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentMapper;
 import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
+import edu.stanford.slac.core_build_system.model.ComponentDependency;
 import edu.stanford.slac.core_build_system.repository.CommandTemplateRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
 import edu.stanford.slac.core_build_system.service.engine.EngineFactory;
+import io.mongock.runner.core.executor.dependency.DependencyContext;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,54 +38,24 @@ public class ComponentService {
      * @return The unique identifier of the new component
      */
     public String create(@Valid NewComponentDTO newComponentDTO) {
+
+        var componentToSave = componentMapper.toModel(newComponentDTO);
         // check if there is a conflict
         assertion(
-                ComponentAlreadyExists.byNameAndVersion()
+                ComponentAlreadyExists.byName()
                         .errorCode(-1)
-                        .name(newComponentDTO.name())
-                        .version(newComponentDTO.version())
+                        .name(componentToSave.getName())
                         .build(),
-                () -> !componentRepository.existsByNameAndVersion(
-                        newComponentDTO.name(),
-                        newComponentDTO.version()
+                () -> !componentRepository.existsByName(
+                        componentToSave.getName()
                 )
         );
-
-        //check if the command templates exists
-        Objects.requireNonNullElse
-                        (
-                                newComponentDTO.commandTemplatesInstances(),
-                                Collections.<CommandTemplateInstanceDTO>emptyList()
-                        )
-                .forEach(
-                        templateInstance -> {
-                            // check for the existence of the command template
-                            assertion(
-                                    ControllerLogicException.builder()
-                                            .errorCode(-2)
-                                            .errorMessage("The command template %s does not exist".formatted(templateInstance.id()))
-                                            .build(),
-                                    () -> commandTemplateRepository.existsById(templateInstance.id())
-                            );
-
-                            // check for the validity of the parameters for the command template
-                            var parameterNames = templateInstance.parameters().keySet().stream().toList();
-                            assertion(
-                                    ControllerLogicException.builder()
-                                            .errorCode(-3)
-                                            .errorMessage("One or more parameters '%s' are not valid for the command template".formatted(String.join(", ", parameterNames)))
-                                            .build(),
-                                    () -> commandTemplateRepository.existsByIdAndParameters_NameIn(templateInstance.id(), parameterNames)
-                            );
-                        }
-
-                );
+        // check dependency
+        validateDependencies(Optional.empty(), componentToSave.getDependOn());
 
         // create a new component
         var savedComponent = wrapCatch(
-                () -> componentRepository.save(
-                        componentMapper.toModel(newComponentDTO)
-                ),
+                () -> componentRepository.save(componentToSave),
                 -1
         );
         return savedComponent.getId();
@@ -111,7 +83,7 @@ public class ComponentService {
      */
     public List<ComponentSummaryDTO> findAll() {
         return wrapCatch(
-                () -> componentRepository.findAll(),
+                componentRepository::findAll,
                 -1
         ).stream().map(componentMapper::toSummaryDTO).toList();
     }
@@ -128,22 +100,26 @@ public class ComponentService {
                 -1
         ).orElseThrow(() -> ComponentNotFound.byId().errorCode(-2).id(id).build());
 
+        var componentUpdated = componentMapper.updateModel(updateComponentDTO, componentToUpdate);
+
+        // check if there is a conflict with anther component
+        assertion(
+                ComponentAlreadyExists.byName()
+                        .errorCode(-1)
+                        .name(componentUpdated.getName())
+                        .build(),
+                () -> !componentRepository.existsByNameAndIdIsNot(
+                        componentUpdated.getName(),
+                        componentUpdated.getId()
+                )
+        );
+
         // check for depend on itself
-        if (updateComponentDTO.dependOnComponentIds() != null) {
-            assertion(
-                    ControllerLogicException.builder()
-                            .errorCode(-1)
-                            .errorMessage("The component cannot depend on itself")
-                            .build(),
-                    () -> !updateComponentDTO.dependOnComponentIds().contains(id)
-            );
-        }
+        validateDependencies(Optional.of(id), componentUpdated.getDependOn());
 
         // update
         wrapCatch(
-                () -> componentRepository.save(
-                        componentMapper.updateModel(updateComponentDTO, componentToUpdate)
-                ),
+                () -> componentRepository.save(componentUpdated),
                 -1
         );
     }
@@ -164,7 +140,7 @@ public class ComponentService {
                         .errorCode(-2)
                         .errorMessage("The component is in use by other components")
                         .build(),
-                () -> !componentRepository.existsByDependOnComponentIdsContaining(id)
+                () -> !componentRepository.existsByDependOn_ComponentIdContains(id)
         );
         //delete
         wrapCatch(
@@ -181,7 +157,7 @@ public class ComponentService {
      *
      * @param engineName   The name of the engine
      * @param componentIds The list of component unique identifiers
-     * @param buildSpecs
+     * @param buildSpecs  The build specs
      * @return The artifact
      */
     public FileResourceDTO createArtifactByEngineNameAndComponentList(String engineName, List<String> componentIds, Map<String, String> buildSpecs) {
@@ -200,7 +176,7 @@ public class ComponentService {
                 .builder()
                 .length(content.length())
                 .fileStream(new ByteArrayInputStream(content.getBytes()))
-                .fileName(engineName.equals("docker")?"Dockerfile":"ansible.yml")
+                .fileName(engineName.equals("docker") ? "Dockerfile" : "ansible.yml")
                 .build();
     }
 
@@ -209,7 +185,39 @@ public class ComponentService {
      *
      * @return The list of engine names
      */
-    public Set<String> getEngineNames(){
+    public Set<String> getEngineNames() {
         return engineFactory.getEngineNames();
+    }
+
+    /**
+     * Validate the dependencies
+     *
+     * @param dependOnComponent The list of dependencies
+     */
+    private void validateDependencies(Optional<String> parentId, Set<ComponentDependency> dependOnComponent) {
+        if (dependOnComponent == null || dependOnComponent.isEmpty()) return;
+        // check cyclic dependency
+        parentId.ifPresent(
+                s -> assertion(
+                        ControllerLogicException.builder()
+                                .errorCode(-1)
+                                .errorMessage("The component cannot depend on itself")
+                                .build(),
+                        () -> dependOnComponent.stream().noneMatch(d -> d.getComponentId().compareToIgnoreCase(s) == 0)
+                )
+        );
+
+        var dependOnComponentIds = dependOnComponent.stream().map(ComponentDependency::getComponentId).toList();
+        dependOnComponentIds.forEach(
+                componentId -> {
+                    assertion(
+                            ControllerLogicException.builder()
+                                    .errorCode(-2)
+                                    .errorMessage("The component has not been found")
+                                    .build(),
+                            () -> componentRepository.existsById(componentId)
+                    );
+                }
+        );
     }
 }

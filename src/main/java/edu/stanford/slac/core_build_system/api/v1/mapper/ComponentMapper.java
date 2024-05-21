@@ -1,21 +1,73 @@
 package edu.stanford.slac.core_build_system.api.v1.mapper;
 
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentSummaryDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.UpdateComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.*;
+import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.model.Component;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import edu.stanford.slac.core_build_system.model.ComponentDependency;
+import edu.stanford.slac.core_build_system.repository.ComponentRepository;
+import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
+
 @Mapper(
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
         componentModel = "spring"
 )
 public abstract class ComponentMapper {
+    @Autowired
+    private ComponentRepository componentRepository;
+    @Mapping(target = "name", qualifiedByName = "sanitize-name")
+    @Mapping(target = "dependOn", expression = "java(nameToId(newComponentDTO.dependOn()))")
     abstract public Component toModel(NewComponentDTO newComponentDTO);
     abstract public ComponentDTO toDTO(Component component);
     abstract public ComponentSummaryDTO toSummaryDTO(Component component);
-
+    @Mapping(target = "name", qualifiedByName = "sanitize-name")
+    @Mapping(target = "dependOn", expression = "java(nameToId(updateComponentDTO.dependOn()))")
     abstract public Component updateModel(UpdateComponentDTO updateComponentDTO, @MappingTarget Component componentToUpdate);
+
+    @Named("sanitize-name")
+    public String sanitizeName(String name) {
+        return name.toLowerCase().trim().replace(" ", "-");
+    }
+
+    /**
+     * Convert the component name to the component id.
+     * @param name The name of the component.
+     * @return The id of the component.
+     */
+    public ComponentDependency nameToId(ComponentDependencyDTO dependency) {
+        String componentId = wrapCatch(
+                ()->
+                        componentRepository.findByName(sanitizeName(dependency.componentName()))
+                                .map(Component::getId)
+                                .orElseThrow(
+                                        ()-> ComponentNotFound.byId()
+                                                .id(dependency.componentName())
+                                                .errorCode(-1)
+                                                .build()
+                                ),
+                -1
+        );
+
+        return ComponentDependency
+                .builder()
+                .componentId(componentId)
+                .version(dependency.tagName())
+                .build();
+    }
+
+    /**
+     * Convert the list of component names to the list of component ids.
+     * @param names The list of component names.
+     * @return The list of component ids.
+     */
+    public Set<ComponentDependency> nameToId(Set<ComponentDependencyDTO> names) {
+        if(names == null) return Collections.emptySet();
+        return names.stream().map(this::nameToId).collect(Collectors.toSet());
+    }
 }

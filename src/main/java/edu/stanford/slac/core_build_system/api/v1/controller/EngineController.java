@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@RestController()
-@RequestMapping("/v1/engine")
+//@RestController()
+//@RequestMapping("/v1/engine")
 @AllArgsConstructor
 @Schema(description = "Api set for the generation of artifact by the respective engines")
 public class EngineController {

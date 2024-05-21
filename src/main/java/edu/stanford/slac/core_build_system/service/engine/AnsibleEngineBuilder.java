@@ -78,56 +78,56 @@ public class AnsibleEngineBuilder implements EngineBuilder {
             return;
         }
 
-        if (component.getDependOnComponentIds() != null) {
-            component.getDependOnComponentIds().forEach(
-                    componentId -> {
-                        Component  dependentComponent = componentRepository
-                                .findById(componentId)
-                                .orElseThrow(
-                                        ()->ComponentNotFound
-                                                .byId()
-                                                .errorCode(-1)
-                                                .id(componentId)
-                                                .build()
-                                );
-                        processComponent(dependentComponent, playbook, processedComponents);
-                    }
-            );
-        }
+//        if (component.getDependOnComponentIds() != null) {
+//            component.getDependOnComponentIds().forEach(
+//                    componentDependency -> {
+//                        Component  dependentComponent = componentRepository
+//                                .findById(componentDependency.getComponentId())
+//                                .orElseThrow(
+//                                        ()->ComponentNotFound
+//                                                .byId()
+//                                                .errorCode(-1)
+//                                                .id(componentDependency.getComponentId())
+//                                                .build()
+//                                );
+//                        processComponent(dependentComponent, playbook, processedComponents);
+//                    }
+//            );
+//        }
 
         // Process command templates instances if they exist
-        if (component.getCommandTemplatesInstances() != null) {
-            for (CommandTemplateInstance instance : component.getCommandTemplatesInstances()) {
-                CommandTemplate commandTemplate = commandTemplateRepository
-                        .findById(instance.getId())
-                        .orElseThrow(() -> new RuntimeException("Command template not found: " + instance.getId()));
-                // check if command depend on other component
-                if (commandTemplate.getDependOnComponents() != null) {
-                    commandTemplate.getDependOnComponents().forEach(
-                            componentId -> {
-                                Component  dependentComponent = componentRepository
-                                        .findById(componentId)
-                                        .orElseThrow(
-                                                ()->ComponentNotFound
-                                                        .byId()
-                                                        .errorCode(-1)
-                                                        .id(componentId)
-                                                        .build()
-                                        );
-                                processComponent(dependentComponent, playbook, processedComponents);
-                            }
-                    );
-                }
-                appendAnsibleTasksFromTemplate(commandTemplate, instance.getParameters(), playbook);
-            }
-        }
-
-        // Process owned command templates directly
-        if (component.getCommandTemplates() != null) {
-            for (CommandTemplate commandTemplate : component.getCommandTemplates()) {
-                appendAnsibleTasksFromTemplate(commandTemplate, null, playbook); // Assuming no parameters for simplicity
-            }
-        }
+//        if (component.getCommandTemplatesInstances() != null) {
+//            for (CommandTemplateInstance instance : component.getCommandTemplatesInstances()) {
+//                CommandTemplate commandTemplate = commandTemplateRepository
+//                        .findById(instance.getId())
+//                        .orElseThrow(() -> new RuntimeException("Command template not found: " + instance.getId()));
+//                // check if command depend on other component
+//                if (commandTemplate.getDependOnComponents() != null) {
+//                    commandTemplate.getDependOnComponents().forEach(
+//                            componentId -> {
+//                                Component  dependentComponent = componentRepository
+//                                        .findById(componentId)
+//                                        .orElseThrow(
+//                                                ()->ComponentNotFound
+//                                                        .byId()
+//                                                        .errorCode(-1)
+//                                                        .id(componentId)
+//                                                        .build()
+//                                        );
+//                                processComponent(dependentComponent, playbook, processedComponents);
+//                            }
+//                    );
+//                }
+//                appendAnsibleTasksFromTemplate(commandTemplate, instance.getParameters(), playbook);
+//            }
+//        }
+//
+//        // Process owned command templates directly
+//        if (component.getCommandTemplates() != null) {
+//            for (CommandTemplate commandTemplate : component.getCommandTemplates()) {
+//                appendAnsibleTasksFromTemplate(commandTemplate, null, playbook); // Assuming no parameters for simplicity
+//            }
+//        }
 
     }
 

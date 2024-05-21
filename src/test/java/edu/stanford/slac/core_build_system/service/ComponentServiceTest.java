@@ -1,6 +1,9 @@
 package edu.stanford.slac.core_build_system.service;
 
+import edu.stanford.slac.ad.eed.baselib.exception.ControllerLogicException;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
+import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
+import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.model.CommandTemplate;
 import edu.stanford.slac.core_build_system.model.Component;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,6 +26,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @AutoConfigureMockMvc
 @SpringBootTest()
@@ -40,78 +44,6 @@ public class ComponentServiceTest {
     private String copyCommandId;
     private String downloadCommandId;
 
-    @BeforeAll
-    public void initCommand() {
-        mongoTemplate.remove(new Query(), CommandTemplate.class);
-        copyCommandId = assertDoesNotThrow(
-                () ->
-                        commandTemplateService.create(
-                                NewCommandTemplateDTO.builder()
-                                        .name("copy")
-                                        .description("copy file or directory from source to destination")
-                                        .parameters(
-                                                Set.of(
-                                                        CommandTemplateParameterDTO.builder()
-                                                                .name("source")
-                                                                .description("the source file or directory")
-                                                                .build(),
-                                                        CommandTemplateParameterDTO.builder()
-                                                                .name("destination_dir")
-                                                                .description("the destination directory")
-                                                                .build()
-                                                )
-                                        )
-                                        .commandExecutionsLayers(
-                                                Set.of(
-                                                        ExecutionPipelineDTO.builder()
-                                                                .engine("shell")
-                                                                .architecture(List.of("linux"))
-                                                                .operatingSystem(List.of("ubuntu", "redhat"))
-                                                                .executionCommands(List.of("cp ${source} ${destination_dir}"))
-                                                                .build()
-                                                )
-                                        )
-                                        .build()
-                        )
-        );
-        downloadCommandId = assertDoesNotThrow(
-                () ->
-                        commandTemplateService.create(
-                                NewCommandTemplateDTO.builder()
-                                        .name("download")
-                                        .description("download file from source to destination folder")
-                                        .parameters(
-                                                Set.of(
-                                                        CommandTemplateParameterDTO.builder()
-                                                                .name("source_url")
-                                                                .description("the source url")
-                                                                .build(),
-                                                        CommandTemplateParameterDTO.builder()
-                                                                .name("destination_dir")
-                                                                .description("the destination directory")
-                                                                .build()
-                                                )
-                                        )
-                                        .commandExecutionsLayers(
-                                                Set.of(
-                                                        ExecutionPipelineDTO.builder()
-                                                                .engine("shell")
-                                                                .architecture(List.of("linux"))
-                                                                .operatingSystem(List.of("ubuntu", "redhat"))
-                                                                .executionCommands(
-                                                                        List.of(
-                                                                                "mkdir -P ${destination_dir}",
-                                                                                "curl -o ${destination_dir} ${source_url}"
-                                                                        )
-                                                                )
-                                                                .build()
-                                                )
-                                        )
-                                        .build()
-                        )
-        );
-    }
-
     @BeforeEach
     public void cleanCollection() {
         mongoTemplate.remove(new Query(), Component.class);
@@ -124,47 +56,230 @@ public class ComponentServiceTest {
                         .builder()
                         .name("boost libraries")
                         .description("boost libraries for c++ applications")
+                        .organization("boost")
+                        .url("https://www.boost.org/")
+                        .approvalRule("rule1")
+                        .testingCriteria("criteria1")
+                        .approvalIdentity(Set.of("user1@slac.stanford.edu"))
                         .version("1_82_0")
-                        .commandTemplatesInstances(
-                                List.of(
-                                        CommandTemplateInstanceDTO
-                                                .builder()
-                                                .id(downloadCommandId)
-                                                .parameters(
-                                                        Map.of(
-                                                                "source_url", "https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.zip",
-                                                                "destination_dir", "/tmp/build/"
-                                                        )
-                                                )
-                                                .build()
-                                )
-                        )
-                        .commandTemplates(
-                                List.of(
-                                        CommandTemplateDTO
-                                                .builder()
-                                                .commandExecutionsLayers(
-                                                        Set.of(
-                                                                ExecutionPipelineDTO
-                                                                        .builder()
-                                                                        .engine("shell")
-                                                                        .architecture(List.of("linux"))
-                                                                        .operatingSystem(List.of("ubuntu", "redhat"))
-                                                                        .executionCommands(
-                                                                                List.of(
-                                                                                        "unzip /tmp/build/boost_1_82_0.zip -d /tmp/build/",
-                                                                                        "cd /tmp/build/boost_1_82_0 && ./bootstrap.sh --prefix=/usr/local",
-                                                                                        "cd /tmp/build/boost_1_82_0 && ./b2 install"
-                                                                                )
-                                                                        )
-                                                                        .build()
-                                                        )
-                                                )
-                                                .build()
-                                )
-                        )
                         .build()
         );
         assertThat(boostComponentId).isNotNull();
+    }
+
+    @Test
+    public void updateNewOK() {
+        var boostComponentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications")
+                                .organization("boost")
+                                .url("https://www.boost.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .version("1_82_0")
+                                .build()
+                )
+        );
+        assertThat(boostComponentId).isNotNull();
+
+        assertDoesNotThrow(
+                () -> componentService.updateById(
+                        boostComponentId,
+                        UpdateComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications update")
+                                .organization("boost updated")
+                                .url("https://www.boost.org/updated")
+                                .approvalRule("rule1 updated")
+                                .testingCriteria("criteria1 updated")
+                                .build()
+                )
+        );
+
+        var boostComponent =  assertDoesNotThrow(
+                () -> componentService.findById(boostComponentId)
+        );
+        assertThat(boostComponent).isNotNull();
+        assertThat(boostComponent.name()).isEqualTo("boost-libraries");
+        assertThat(boostComponent.description()).isEqualTo("boost libraries for c++ applications update");
+        assertThat(boostComponent.organization()).isEqualTo("boost updated");
+        assertThat(boostComponent.url()).isEqualTo("https://www.boost.org/updated");
+        assertThat(boostComponent.approvalRule()).isEqualTo("rule1 updated");
+        assertThat(boostComponent.testingCriteria()).isEqualTo("criteria1 updated");
+    }
+
+    @Test
+    public void failSameName() {
+        var boostComponentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications")
+                                .organization("boost")
+                                .url("https://www.boost.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .version("1_82_0")
+                                .build()
+                )
+        );
+        assertThat(boostComponentId).isNotNull();
+
+        var sameNameException = assertThrows(
+                ComponentAlreadyExists.class,
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications")
+                                .organization("boost")
+                                .url("https://www.boost.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .version("1_82_0")
+                                .build()
+                )
+        );
+        assertThat(sameNameException).isNotNull();
+    }
+
+    @Test
+    public void updateFailSameNameOK() {
+        var boostComponentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications")
+                                .organization("boost")
+                                .url("https://www.boost.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .version("1_82_0")
+                                .build()
+                )
+        );
+        assertThat(boostComponentId).isNotNull();
+
+        var customCompId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("custom component")
+                                .description("custom component for c++ applications")
+                                .organization("custom")
+                                .url("https://www.custom.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .version("1_82_0")
+                                .build()
+                )
+        );
+        assertThat(customCompId).isNotNull();
+
+        var componentLAlreadyExists = assertThrows(
+                ComponentAlreadyExists.class,
+                () -> componentService.updateById(
+                        boostComponentId,
+                        UpdateComponentDTO
+                                .builder()
+                                .name("custom component")
+                                .description("boost libraries for c++ applications update")
+                                .organization("boost updated")
+                                .url("https://www.boost.org/updated")
+                                .approvalRule("rule1 updated")
+                                .testingCriteria("criteria1 updated")
+                                .build()
+                )
+        );
+        assertThat(componentLAlreadyExists).isNotNull();
+        assertThat(componentLAlreadyExists.getErrorCode()).isEqualTo(-1);
+    }
+
+    @Test
+    public void createWithRightDependenceOK() {
+        var boostComponentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications")
+                                .organization("boost")
+                                .url("https://www.boost.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .version("1_82_0")
+                                .build()
+                )
+        );
+        assertThat(boostComponentId).isNotNull();
+
+        var customAppComponentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("custom app 1")
+                                .description("custom app 1 for c++ applications")
+                                .organization("custom")
+                                .url("https://www.custom.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .dependOn(
+                                        Set.of(
+                                                ComponentDependencyDTO
+                                                        .builder()
+                                                        .componentName("boost Libraries")
+                                                        .tagName("1_82_0")
+                                                        .build()
+                                        )
+                                )
+                                .version("1.0.0")
+                                .build()
+                )
+        );
+        assertThat(customAppComponentId).isNotNull();
+    }
+
+    @Test
+    public void createWithWrongDependenceFail() {
+        var componentNotFoundException = assertThrows(
+                ComponentNotFound.class,
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("custom app 1")
+                                .description("custom app 1 for c++ applications")
+                                .organization("custom")
+                                .url("https://www.custom.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .dependOn(
+                                        Set.of(
+                                                ComponentDependencyDTO
+                                                        .builder()
+                                                        .componentName("boost Libraries")
+                                                        .tagName("1_82_0")
+                                                        .build()
+                                        )
+                                )
+                                .version("1.0.0")
+                                .build()
+                )
+        );
+        assertThat(componentNotFoundException).isNotNull();
+        assertThat(componentNotFoundException.getErrorCode()).isEqualTo(-1);
     }
 }
