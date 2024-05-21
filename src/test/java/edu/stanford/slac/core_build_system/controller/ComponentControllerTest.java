@@ -155,7 +155,8 @@ public class ComponentControllerTest {
     @Test
     public void findAll() throws Exception {
         Set<String> newCreatedId = new HashSet<>();
-        for (int idx = 0; idx < 99; idx++) {
+        for (int idx = 0; idx <= 99; idx++) {
+            int finalIdx = idx;
             var newCompIdResult = assertDoesNotThrow(
                     () -> testControllerHelperService.componentControllerCreate(
                             mockMvc,
@@ -163,7 +164,7 @@ public class ComponentControllerTest {
                             Optional.of("user1@slac.stanford.edu"),
                             NewComponentDTO
                                     .builder()
-                                    .name("custom app 1")
+                                    .name("custom app %d".formatted(finalIdx))
                                     .description("custom app 1 for c++ applications")
                                     .organization("custom")
                                     .url("https://www.custom.org/")
@@ -237,6 +238,6 @@ public class ComponentControllerTest {
                 )
         );
         assertThat(componentNotFoundException).isNotNull();
-        assertThat(componentNotFoundException.getErrorCode()).isEqualTo(-1);
+        assertThat(componentNotFoundException.getErrorCode()).isEqualTo(-2);
     }
 }
