@@ -32,6 +32,7 @@ public class GithubServerRepository implements GitServerRepository {
                 .allowMergeCommit(true)
                 .allowSquashMerge(true)
                 .allowRebaseMerge(false)
+                .deleteBranchOnMerge(true)
                 .create();
         log.info("Repository created: {}", repo.getHtmlUrl());
     }
