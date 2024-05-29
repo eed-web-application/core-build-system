@@ -76,6 +76,7 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5' // or 'io.jsonwebtoken:jjwt-gson:0.12.5' for gson
+    implementation 'org.bouncycastle:bcprov-jdk16:1.45'
 
     // github api
     implementation'org.kohsuke:github-api:1.321'

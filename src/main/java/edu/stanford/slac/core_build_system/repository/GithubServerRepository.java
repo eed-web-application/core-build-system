@@ -1,68 +1,79 @@
 package edu.stanford.slac.core_build_system.repository;
 
-import com.google.common.io.Files;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.SignatureAlgorithm;
-import org.kohsuke.github.GHAppInstallation;
-import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubBuilder;
-import org.springframework.beans.factory.annotation.Value;
+import edu.stanford.slac.core_build_system.model.Component;
+import edu.stanford.slac.core_build_system.model.NewBranch;
+import edu.stanford.slac.core_build_system.model.PullRequest;
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.kohsuke.github.*;
 import org.springframework.stereotype.Repository;
 
-import java.io.File;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Date;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
+@Log4j2
 @Repository
-public class GithubServerRepository {
-    @Value("${edu.stanford.slac.core-build-system.github-app-id}")
-    private String githubId;
-    @Value("${edu.stanford.slac.core-build-system.github-app-installation-id}")
-    private long githubInstallationId;
-    @Value("${edu.stanford.slac.core-build-system.secret-key}")
-    private String githubSecretKey;
-    private long ttMsec = 60000;
-    private PrivateKey getKey() throws Exception {
-        byte[] keyBytes = githubSecretKey.getBytes();
+@AllArgsConstructor
+public class GithubServerRepository implements GitServerRepository {
+    private final GitHub gitHub;
+    private final GHOrganization ghOrganization;
+    private final GHAppInstallation ghAppInstallation;
 
-        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        return kf.generatePrivate(spec);
+    @Override
+    public void createRepository(Component component) throws IOException {
+        GHRepository repo = ghOrganization.createRepository(component.getName())
+                .private_(true)
+                .wiki(false)
+                .projects(false)
+                .description("Description")
+                .autoInit(true)
+                .allowMergeCommit(true)
+                .allowSquashMerge(true)
+                .allowRebaseMerge(false)
+                .create();
+        log.info("Repository created: {}", repo.getHtmlUrl());
     }
 
-    private String createJWT() throws Exception {
-        //The JWT signature algorithm we will be using to sign the token
-        SignatureAlgorithm signatureAlgorithm = Jwts.SIG.RS256;
+    @Override
+    public void deleteRepo(Component component) throws IOException {
+        ghOrganization.getRepository(component.getName()).delete();
+        log.info("Repository delete: {}", component.getName());
+    }
 
-        long nowMillis = System.currentTimeMillis();
-        Date now = new Date(nowMillis);
-
-        //We will sign our JWT with our private key
-        Key signingKey = getKey();
-
-        //Let's set the JWT Claims
-        JwtBuilder builder = Jwts.builder()
-                .issuedAt(now)
-                .issuer(githubId)
-                .signWith(signingKey);
-
-        //if it has been specified, let's add the expiration
-        if (ttMsec > 0) {
-            long expMillis = nowMillis + ttMsec;
-            Date exp = new Date(expMillis);
-            builder.expiration(exp);
+    @Override
+    public void addUserToRepository(Component component, String username) throws IOException {
+        GHRepository repo = ghOrganization.getRepository(component.getName());
+        List<GHUser> users = new ArrayList<>();
+        GHUser user = gitHub.getUser("test-user");
+        if (user == null) {
+            throw new IOException("User not found");
         }
-
-        //Builds the JWT and serializes it to a compact, URL-safe string
-        return builder.compact();
+        users.add(gitHub.getUser(username));
+        repo.addCollaborators(users, GHOrganization.RepositoryRole.from(GHOrganization.Permission.PULL));
     }
 
-    private GHAppInstallation getInstallation() throws Exception {
-        GitHub gitHubApp = new GitHubBuilder().withJwtToken(createJWT()).build();
-        return gitHubApp.getApp().getInstallationById(githubInstallationId);
+    @Override
+    public void addBranch(Component component, NewBranch newBranch) throws IOException {
+        GHRepository repo = ghOrganization.getRepository(component.getName());
+        String parentRef = repo.getRef("heads/%s".formatted(newBranch.getBaseBranch())).getObject().getSha();
+        GHRef draftBranch = repo.createRef("refs/heads/%s".formatted(newBranch.getBranchName()), parentRef);
+
+        Map<String, GHBranch> branches = repo.getBranches();
+        log.info("Branches: {}", branches);
+    }
+
+    @Override
+    public void createNewPR(Component component, PullRequest pullRequest) throws IOException {
+        GHRepository repo = ghOrganization.getRepository(component.getName());
+        GHRef branchRef = repo.getRef("heads/%s".formatted(pullRequest.getBranchName()));
+
+        GHPullRequest draftPR = repo.createPullRequest(pullRequest.getTitle(),
+                branchRef.getRef(),
+                "refs/heads/%s".formatted(pullRequest.getBaseBranch()),
+                pullRequest.getBase(),
+                true,
+                false);
     }
 }

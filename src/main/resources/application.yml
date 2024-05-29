@@ -27,8 +27,8 @@ edu:
   stanford:
     slac:
       core-build-system:
-        github-app-id: ${CBS_GH_APP_ID:123456}
-        github-app-installation-id: ${CBS_GH_APP_INST_ID:123456}
+        github-app-id: ${CBS_GH_APP_ID}
+        github-app-installation-id: ${CBS_GH_APP_INST_ID}
       ad:
         eed:
           baselib:
