@@ -26,8 +26,9 @@ spring:
 edu:
   stanford:
     slac:
-      core_work_management:
-        cis_backend_url: ${CBS_CIS_URL:http://localhost:8081}
+      core-build-system:
+        github-app-id: ${CBS_GH_APP_ID:123456}
+        github-app-installation-id: ${CBS_GH_APP_INST_ID:123456}
       ad:
         eed:
           baselib:
