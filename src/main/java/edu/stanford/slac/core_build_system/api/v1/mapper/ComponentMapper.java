@@ -2,6 +2,7 @@ package edu.stanford.slac.core_build_system.api.v1.mapper;
 
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
+import edu.stanford.slac.core_build_system.model.Branch;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentDependency;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
@@ -23,6 +24,7 @@ public abstract class ComponentMapper {
     private ComponentRepository componentRepository;
     @Mapping(target = "name", qualifiedByName = "sanitize-name")
     @Mapping(target = "dependOn", expression = "java(nameToId(newComponentDTO.dependOn()))")
+//    @Mapping(target = "versions", ignore = true)
     abstract public Component toModel(NewComponentDTO newComponentDTO);
     abstract public ComponentDTO toDTO(Component component);
     abstract public ComponentSummaryDTO toSummaryDTO(Component component);
@@ -70,4 +72,6 @@ public abstract class ComponentMapper {
         if(names == null) return Collections.emptySet();
         return names.stream().map(this::nameToId).collect(Collectors.toSet());
     }
+
+    abstract public Branch toModel(BranchDTO branchDTO);
 }

@@ -62,7 +62,6 @@ public class ComponentControllerTest {
                         .approvalRule("rule1")
                         .testingCriteria("criteria1")
                         .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                        .version("1.0.0")
                         .build()
         );
         assertThat(newCompIdResult).isNotNull();
@@ -85,7 +84,6 @@ public class ComponentControllerTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1.0.0")
                                 .build()
                 )
         );
@@ -121,7 +119,6 @@ public class ComponentControllerTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1.0.0")
                                 .build()
                 )
         );
@@ -144,7 +141,6 @@ public class ComponentControllerTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user2@slac.stanford.edu"))
-                                .version("1.0.1")
                                 .build()
                 )
         );
@@ -171,7 +167,6 @@ public class ComponentControllerTest {
                                     .approvalRule("rule1")
                                     .testingCriteria("criteria1")
                                     .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                    .version("1.0.0")
                                     .build()
                     )
             );
@@ -210,7 +205,6 @@ public class ComponentControllerTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1.0.0")
                                 .build()
                 )
         );

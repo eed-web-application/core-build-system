@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 @Log4j2
-@Repository
 @AllArgsConstructor
 public class GithubServerRepository implements GitServerRepository {
     private final GitHub gitHub;

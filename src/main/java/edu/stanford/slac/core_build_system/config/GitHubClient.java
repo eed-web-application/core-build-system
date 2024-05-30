@@ -8,7 +8,6 @@ import org.bouncycastle.openssl.PEMReader;
 import org.kohsuke.github.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.io.StringReader;
 import java.security.Key;
@@ -18,7 +17,7 @@ import java.security.Security;
 import java.util.Base64;
 import java.util.Date;
 
-@Configuration
+
 public class GitHubClient {
     @Value("${edu.stanford.slac.core-build-system.github-app-id}")
     private String githubId;

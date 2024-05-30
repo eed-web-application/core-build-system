@@ -20,7 +20,6 @@ public record UpdateComponentDTO(
         @NotNull String name,
         @Schema(description = "The description of the component")
         @NotEmpty String description,
-        @NotEmpty String version,
         @Schema(description = "The organization of the component")
         @NotEmpty String organization,
         @Schema(description = "The URL of the component [src, artifact, etc.]")

@@ -1,14 +1,12 @@
 package edu.stanford.slac.core_build_system.api.v1.controller;
 
 import edu.stanford.slac.ad.eed.baselib.api.v1.dto.ApiResultResponse;
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentSummaryDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.UpdateComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.service.ComponentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
@@ -88,5 +86,36 @@ public class ComponentController {
         return ApiResultResponse.of(
                 componentService.findAll()
         );
+    }
+
+    @PutMapping(
+            path = "/{componentName}/version",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            consumes = {MediaType.APPLICATION_JSON_VALUE}
+    )
+    @Operation(summary = "Create new version of a component")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResultResponse<Boolean> addNewVersion(
+            @PathVariable @NotEmpty String componentName,
+            @RequestBody @Valid NewVersionDTO newVersionDTO
+    ) {
+
+        return ApiResultResponse.of(componentService.addNewVersion(componentName, newVersionDTO));
+    }
+
+    @PutMapping(
+            path = "/{componentName}/version/{versionLabel}",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            consumes = {MediaType.APPLICATION_JSON_VALUE}
+    )
+    @Operation(summary = "Create new version of a component")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResultResponse<Boolean> addBranchToVersion(
+            @PathVariable @NotEmpty String componentName,
+            @PathVariable @NotEmpty String versionLabel,
+            @RequestBody @Valid BranchDTO branchDTO
+    ) {
+
+        return ApiResultResponse.of(componentService.addNewBranch(componentName, versionLabel, branchDTO));
     }
 }

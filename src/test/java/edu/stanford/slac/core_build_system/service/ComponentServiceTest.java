@@ -41,8 +41,6 @@ public class ComponentServiceTest {
     ComponentService componentService;
     @Autowired
     CommandTemplateService commandTemplateService;
-    private String copyCommandId;
-    private String downloadCommandId;
 
     @BeforeEach
     public void cleanCollection() {
@@ -61,7 +59,6 @@ public class ComponentServiceTest {
                         .approvalRule("rule1")
                         .testingCriteria("criteria1")
                         .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                        .version("1_82_0")
                         .build()
         );
         assertThat(boostComponentId).isNotNull();
@@ -80,7 +77,6 @@ public class ComponentServiceTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1_82_0")
                                 .build()
                 )
         );
@@ -101,7 +97,7 @@ public class ComponentServiceTest {
                 )
         );
 
-        var boostComponent =  assertDoesNotThrow(
+        var boostComponent = assertDoesNotThrow(
                 () -> componentService.findById(boostComponentId)
         );
         assertThat(boostComponent).isNotNull();
@@ -126,7 +122,6 @@ public class ComponentServiceTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1_82_0")
                                 .build()
                 )
         );
@@ -144,7 +139,6 @@ public class ComponentServiceTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1_82_0")
                                 .build()
                 )
         );
@@ -164,7 +158,6 @@ public class ComponentServiceTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1_82_0")
                                 .build()
                 )
         );
@@ -181,7 +174,6 @@ public class ComponentServiceTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1_82_0")
                                 .build()
                 )
         );
@@ -219,7 +211,6 @@ public class ComponentServiceTest {
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                                .version("1_82_0")
                                 .build()
                 )
         );
@@ -245,7 +236,6 @@ public class ComponentServiceTest {
                                                         .build()
                                         )
                                 )
-                                .version("1.0.0")
                                 .build()
                 )
         );
@@ -275,11 +265,153 @@ public class ComponentServiceTest {
                                                         .build()
                                         )
                                 )
-                                .version("1.0.0")
                                 .build()
                 )
         );
         assertThat(componentNotFoundException).isNotNull();
         assertThat(componentNotFoundException.getErrorCode()).isEqualTo(-1);
+    }
+
+    @Test
+    public void createVersionOK() {
+        var boostComponentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications")
+                                .organization("boost")
+                                .url("https://www.boost.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .build()
+                )
+        );
+        assertThat(boostComponentId).isNotNull();
+        var versionAddResult = assertDoesNotThrow(
+                () -> componentService.addNewVersion(
+                        "boost-libraries",
+                        NewVersionDTO
+                                .builder()
+                                .label("1_83_0")
+                                .build()
+                )
+        );
+        assertThat(versionAddResult).isNotNull();
+        assertThat(versionAddResult).isTrue();
+
+        // fetch full component
+        var boostComponent = assertDoesNotThrow(
+                () -> componentService.findById(boostComponentId)
+        );
+        assertThat(boostComponent).isNotNull();
+        assertThat(boostComponent.name()).isEqualTo("boost-libraries");
+        assertThat(boostComponent.versions()).isNotNull();
+        assertThat(boostComponent.versions().size()).isEqualTo(1);
+        assertThat(boostComponent.versions().get(0).label()).isEqualTo("1_83_0");
+    }
+
+    @Test
+    public void createVersionFailTwoSameLabelOK() {
+        var boostComponentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications")
+                                .organization("boost")
+                                .url("https://www.boost.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .build()
+                )
+        );
+        assertThat(boostComponentId).isNotNull();
+        var versionAddResult = assertDoesNotThrow(
+                () -> componentService.addNewVersion(
+                        "boost-libraries",
+                        NewVersionDTO
+                                .builder()
+                                .label("1_83_0")
+                                .build()
+                )
+        );
+        assertThat(versionAddResult).isNotNull();
+        assertThat(versionAddResult).isTrue();
+
+        // fetch full component
+        var sameLabelException = assertThrows(
+                ControllerLogicException.class,
+                () -> componentService.addNewVersion(
+                        "boost-libraries",
+                        NewVersionDTO
+                                .builder()
+                                .label("1_83_0")
+                                .build()
+                )
+        );
+        assertThat(sameLabelException).isNotNull();
+        assertThat(sameLabelException.getErrorCode()).isEqualTo(-3);
+    }
+
+    @Test
+    public void createBranchOnVersionOK() {
+        var boostComponentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("boost libraries")
+                                .description("boost libraries for c++ applications")
+                                .organization("boost")
+                                .url("https://www.boost.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .build()
+                )
+        );
+        assertThat(boostComponentId).isNotNull();
+        var versionAddResult = assertDoesNotThrow(
+                () -> componentService.addNewVersion(
+                        "boost-libraries",
+                        NewVersionDTO
+                                .builder()
+                                .label("1_83_0")
+                                .build()
+                )
+        );
+        assertThat(versionAddResult).isNotNull();
+        assertThat(versionAddResult).isTrue();
+
+
+        var branchAddResult = assertDoesNotThrow(
+                () -> componentService.addNewBranch(
+                        "boost-libraries",
+                        "1_83_0",
+                        BranchDTO
+                                .builder()
+                                .type("feature")
+                                .branchName("add-new-channel")
+                                .branchPoint("main")
+                                .build()
+                )
+        );
+        assertThat(branchAddResult).isNotNull();
+        assertThat(branchAddResult).isTrue();
+
+        // fetch full component
+        var boostComponent = assertDoesNotThrow(
+                () -> componentService.findById(boostComponentId)
+        );
+        assertThat(boostComponent).isNotNull();
+        assertThat(boostComponent.name()).isEqualTo("boost-libraries");
+        assertThat(boostComponent.versions()).isNotNull();
+        assertThat(boostComponent.versions().size()).isEqualTo(1);
+        assertThat(boostComponent.versions().get(0).label()).isEqualTo("1_83_0");
+        assertThat(boostComponent.versions().get(0).branches().getFirst().branchName()).isEqualTo("add-new-channel");
+        assertThat(boostComponent.versions().get(0).branches().getFirst().branchPoint()).isEqualTo("main");
+        assertThat(boostComponent.versions().get(0).branches().getFirst().type()).isEqualTo("feature");
     }
 }
