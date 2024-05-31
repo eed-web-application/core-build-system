@@ -13,6 +13,5 @@ import java.util.List;
 @EqualsAndHashCode
 public class Version {
     private String label;
-    @Builder.Default
-    private List<Branch> branches = new java.util.ArrayList<>();
+    private String branchTag;
 }

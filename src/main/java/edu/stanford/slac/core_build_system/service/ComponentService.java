@@ -212,10 +212,9 @@ public class ComponentService {
      * Add a new branch to a version
      *
      * @param componentName The name of the component
-     * @param versionLabel    The name of the branch
      * @param branchDTO     The new branch
      */
-    public Boolean addNewBranch(String componentName, String versionLabel, BranchDTO branchDTO) {
+    public Boolean addNewBranch(String componentName, BranchDTO branchDTO) {
         Component comp = wrapCatch(
                 () -> componentRepository.findByName(componentName)
                         .orElseThrow(
@@ -229,16 +228,6 @@ public class ComponentService {
                 -2
         );
 
-        Version version = comp.getVersions().stream().filter(
-                (v) -> v.getLabel().compareToIgnoreCase(versionLabel) == 0
-        ).findAny().orElseThrow(
-                () ->
-                        ControllerLogicException.builder()
-                                .errorCode(-2)
-                                .errorMessage("The version has not been found")
-                                .build()
-        );
-
         // check if the branch name already exists
         assertion(
                 ControllerLogicException
@@ -249,12 +238,12 @@ public class ComponentService {
                         .build(),
                 () -> all
                         (
-                                () -> version.getBranches().stream().noneMatch(b -> b.getBranchPoint().compareToIgnoreCase(branchDTO.branchName()) == 0),
+                                () -> comp.getBranches().stream().noneMatch(b -> b.getBranchName().compareToIgnoreCase(branchDTO.branchName()) == 0),
                                 () -> branchDTO.branchName() != null && !branchDTO.branchName().contains(" ")
                         )
         );
 
-        version.getBranches().add(
+        comp.getBranches().add(
                 componentMapper.toModel(branchDTO)
         );
 

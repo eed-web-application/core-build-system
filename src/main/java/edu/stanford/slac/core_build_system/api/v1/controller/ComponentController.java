@@ -112,10 +112,9 @@ public class ComponentController {
     @ResponseStatus(HttpStatus.OK)
     public ApiResultResponse<Boolean> addBranchToVersion(
             @PathVariable @NotEmpty String componentName,
-            @PathVariable @NotEmpty String versionLabel,
             @RequestBody @Valid BranchDTO branchDTO
     ) {
 
-        return ApiResultResponse.of(componentService.addNewBranch(componentName, versionLabel, branchDTO));
+        return ApiResultResponse.of(componentService.addNewBranch(componentName, branchDTO));
     }
 }

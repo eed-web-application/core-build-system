@@ -22,7 +22,6 @@ public record ComponentDTO(
         String name,
         @Schema(description = "The description of the component")
         String description,
-        List<VersionDTO> versions,
         @Schema(description = "The organization of the component")
         String organization,
         @Schema(description = "The URL of the component [src, artifact, etc.]")
@@ -33,6 +32,12 @@ public record ComponentDTO(
         String testingCriteria,
         Set<String> approvalIdentity,
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
-        Set<ComponentDependencyDTO> dependOn
+        Set<ComponentDependencyDTO> dependOn,
+        @Schema(description = "The token for authorize action on the component")
+        String componentToken,
+        @Schema(description = "The list of versions of the component")
+        List<VersionDTO> versions,
+        @Schema(description = "The list of branches of the component")
+        List<BranchDTO> branches
 ) {
 }

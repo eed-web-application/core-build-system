@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -23,6 +24,8 @@ public class Component {
     private String description;
     @Builder.Default
     private List<Version> versions = new java.util.ArrayList<>();
+    @Builder.Default
+    private List<Branch> branches = new java.util.ArrayList<>();
     private String organization;
     private String url;
     private String approvalRule;
@@ -31,6 +34,8 @@ public class Component {
     private String buildInstructions;
     @Builder.Default
     private Set<ComponentDependency> dependOn = new java.util.HashSet<>();
+    @Builder.Default
+    private String componentToken = UUID.randomUUID().toString();
     /**
      * The date and time when the activity was created.
      * This field is automatically populated with the creation date and time, using @CreatedDate annotation.
