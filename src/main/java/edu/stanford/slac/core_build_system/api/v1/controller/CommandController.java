@@ -16,8 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-//@RestController()
-//@RequestMapping("/v1/command")
+
 @AllArgsConstructor
 @Schema(description = "Api set for the component management")
 public class CommandController {
