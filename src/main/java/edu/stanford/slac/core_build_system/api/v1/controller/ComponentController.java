@@ -99,22 +99,20 @@ public class ComponentController {
             @PathVariable @NotEmpty String componentName,
             @RequestBody @Valid NewVersionDTO newVersionDTO
     ) {
-
         return ApiResultResponse.of(componentService.addNewVersion(componentName, newVersionDTO));
     }
 
     @PutMapping(
-            path = "/{componentName}/version/{versionLabel}",
+            path = "/{componentName}/branch",
             produces = {MediaType.APPLICATION_JSON_VALUE},
             consumes = {MediaType.APPLICATION_JSON_VALUE}
     )
-    @Operation(summary = "Create new version of a component")
+    @Operation(summary = "Create new branch of a component")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<Boolean> addBranchToVersion(
+    public ApiResultResponse<Boolean> addBranch(
             @PathVariable @NotEmpty String componentName,
             @RequestBody @Valid BranchDTO branchDTO
     ) {
-
         return ApiResultResponse.of(componentService.addNewBranch(componentName, branchDTO));
     }
 }

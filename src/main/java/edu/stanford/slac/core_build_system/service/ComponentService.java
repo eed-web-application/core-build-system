@@ -5,6 +5,7 @@ import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentMapper;
 import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
+import edu.stanford.slac.core_build_system.exception.ComponentNotFoundByUrl;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentDependency;
 import edu.stanford.slac.core_build_system.model.Version;
@@ -39,7 +40,6 @@ public class ComponentService {
      * @return The unique identifier of the new component
      */
     public String create(@Valid NewComponentDTO newComponentDTO) {
-
         var componentToSave = componentMapper.toModel(newComponentDTO);
         // check if there is a conflict
         assertion(
@@ -60,6 +60,19 @@ public class ComponentService {
                 -1
         );
         return savedComponent.getId();
+    }
+
+    /**
+     * Find a component by its project url
+     *
+     * @param projectUrl The project url
+     * @return The details of the component
+     */
+    ComponentDTO findComponentByProjectUrl(List<String> projectUrls) {
+        return componentRepository
+                .findByUrlIn(projectUrls)
+                .map(componentMapper::toDTO)
+                .orElseThrow(() -> ComponentNotFoundByUrl.byUrl().errorCode(-1).url(projectUrls.toString()).build());
     }
 
     /**

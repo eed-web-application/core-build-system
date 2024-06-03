@@ -12,7 +12,7 @@ import lombok.Builder;
 @Schema(description = "Define new branch")
 public record BranchDTO(
         @Schema(description = "ex: [fix, dev] where fix is meant to merge to main, and dev is not.")
-        @NotEmpty String type,
+        String type,
         @Schema(description = "The unique name that identify of the branch")
         @NotEmpty String branchName,
         @Schema(description = "The unique name that identify of the branch start point")

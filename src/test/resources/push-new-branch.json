@@ -1,7 +1,7 @@
 {
   "event": "push",
   "payload": {
-    "ref": "refs/heads/feature/new-branch",
+    "ref": "refs/heads/{branch-name}",
     "before": "0000000000000000000000000000000000000000",
     "after": "77fe995323e3c1f7c5b0c2dbe390964c5cea3790",
     "repository": {
@@ -75,7 +75,7 @@
       "created_at": 1717017468,
       "updated_at": "2024-05-31T20:57:30Z",
       "pushed_at": 1717189099,
-      "git_url": "git://github.com/ad-build-test/repository-name.git",
+      "git_url": "{project_url}",
       "ssh_url": "git@github.com:ad-build-test/repository-name.git",
       "clone_url": "https://github.com/ad-build-test/repository-name.git",
       "svn_url": "https://github.com/ad-build-test/repository-name",
