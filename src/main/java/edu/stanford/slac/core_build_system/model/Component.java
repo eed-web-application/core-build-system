@@ -1,8 +1,5 @@
 package edu.stanford.slac.core_build_system.model;
 
-import edu.stanford.slac.core_build_system.api.v1.dto.CommandTemplateDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.CommandTemplateInstanceDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.CommandTemplateParameterDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -24,11 +22,10 @@ public class Component {
     private String id;
     private String name;
     private String description;
-    /**
-     * The tagName of the component.
-     * Version of component schema (NOT the repo tagName)
-     */
-    private String version;
+    @Builder.Default
+    private List<Version> versions = new java.util.ArrayList<>();
+    @Builder.Default
+    private List<Branch> branches = new java.util.ArrayList<>();
     private String organization;
     private String url;
     private String approvalRule;
@@ -37,6 +34,8 @@ public class Component {
     private String buildInstructions;
     @Builder.Default
     private Set<ComponentDependency> dependOn = new java.util.HashSet<>();
+    @Builder.Default
+    private String componentToken = UUID.randomUUID().toString();
     /**
      * The date and time when the activity was created.
      * This field is automatically populated with the creation date and time, using @CreatedDate annotation.

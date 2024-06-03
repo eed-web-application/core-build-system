@@ -1,6 +1,7 @@
 package edu.stanford.slac.core_build_system.controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.slac.ad.eed.baselib.api.v1.dto.ApiResultResponse;
@@ -9,6 +10,7 @@ import edu.stanford.slac.ad.eed.baselib.config.AppProperties;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.model.Component;
 import org.mapstruct.Builder;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.test.web.servlet.MockMvc;
@@ -16,6 +18,12 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +42,14 @@ public class TestControllerHelperService {
 
     }
 
-
+    /**
+     * Create a new component
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @param newComponentDTO NewComponentDTO
+     * @return ApiResultResponse<String>
+     */
     public ApiResultResponse<String> componentControllerCreate(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -54,6 +69,14 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * Find a component by an id
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @param id String
+     * @return ApiResultResponse<ComponentDTO>
+     */
     public ApiResultResponse<ComponentDTO> componentControllerFindById(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -71,6 +94,14 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * Delete a component by his id
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @param id String
+     * @return ApiResultResponse<Boolean>
+     */
     public ApiResultResponse<Boolean> componentControllerDeleteById(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -88,6 +119,15 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * Update a component by his id
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @param id String
+     * @param updateComponentDTO UpdateComponentDTO
+     * @return ApiResultResponse<Boolean>
+     */
     public ApiResultResponse<Boolean> componentControllerUpdateById(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -107,6 +147,13 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * List all components
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @return ApiResultResponse<List<ComponentSummaryDTO>>
+     */
     public ApiResultResponse<List<ComponentSummaryDTO>> componentControllerFindAll(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -123,7 +170,14 @@ public class TestControllerHelperService {
         );
     }
 
-
+    /**
+     * Create a new command
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @param newCommandTemplateDTO NewCommandTemplateDTO
+     * @return ApiResultResponse<String>
+     */
     public ApiResultResponse<String> commandControllerCreate(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -143,6 +197,14 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * Find a command by an id
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @param id String
+     * @return ApiResultResponse<CommandTemplateDTO>
+     */
     public ApiResultResponse<CommandTemplateDTO> commandControllerFindById(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -160,6 +222,14 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * Delete a command by his id
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @param id String
+     * @return ApiResultResponse<Boolean>
+     */
     public ApiResultResponse<Boolean> commandControllerDeleteById(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -177,6 +247,15 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * Update a command by his id
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @param id String
+     * @param updateCommandTemplateDTO UpdateCommandTemplateDTO
+     * @return ApiResultResponse<Boolean>
+     */
     public ApiResultResponse<Boolean> commandControllerUpdateById(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -196,6 +275,13 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * List all commands
+     * @param mockMvc MockMvc
+     * @param resultMatcher     ResultMatcher
+     * @param userInfo         Optional<String>
+     * @return ApiResultResponse<List<CommandTemplateSummaryDTO>>
+     */
     public ApiResultResponse<List<CommandTemplateSummaryDTO>> commandControllerFindAll(
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
@@ -249,6 +335,101 @@ public class TestControllerHelperService {
                 mockMvc,
                 resultMatcher,
                 userInfo,
+                requestBuilder
+        );
+    }
+
+    /**
+     * Create a new branch
+     */
+    public ApiResultResponse<Boolean> componentControllerCreateNewBranch(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            String componentName,
+            BranchDTO branch
+    ) throws Exception {
+        var requestBuilder = put("/v1/component/{componentName}/branch", componentName)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(branch));
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    /**
+     * Create a new branch
+     */
+    public ApiResultResponse<String> eventControllerHandlePushNewBranchEvent(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String componentToken,
+            String projectUrl,
+            String branchName
+    ) throws Exception {
+        String resolvedJson = loadAndResolveJson("push-new-branch.json", Map.of(
+                "branch-name", branchName,
+                "project_url", projectUrl
+        ));
+        return eventControllerHandlePushEvent(
+                mockMvc,
+                resultMatcher,
+                generateSignature(resolvedJson, componentToken),
+                "push",
+                resolvedJson
+        );
+    }
+
+    private String loadAndResolveJson(String filePath, Map<String, String> valuesMap) throws Exception {
+        ClassPathResource resource = new ClassPathResource(filePath);
+        String jsonTemplate = new String(Files.readAllBytes(resource.getFile().toPath()));
+        for (Map.Entry<String, String> entry : valuesMap.entrySet()) {
+            jsonTemplate = jsonTemplate.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return jsonTemplate;
+    }
+
+    private String generateSignature(String payload, String secret) throws NoSuchAlgorithmException, InvalidKeyException {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        mac.init(secretKeySpec);
+        byte[] hash = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+        return "sha256=" + bytesToHex(hash);
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
+    }
+
+    public ApiResultResponse<String> eventControllerHandlePushEvent(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String signature,
+            String event,
+            String payload
+    ) throws Exception {
+        var requestBuilder = post("/v1/event/gh/webhook")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Hub-Signature-256", signature)
+                .header("X-GitHub-Event", event)
+                .content(payload);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                Optional.empty(),
                 requestBuilder
         );
     }
