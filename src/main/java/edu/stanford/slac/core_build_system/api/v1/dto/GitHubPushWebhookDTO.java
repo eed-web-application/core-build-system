@@ -12,28 +12,21 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GitHubPushWebhookDTO(
-        @Schema(description = "The type of event") @JsonProperty("event") String event,
-        @Schema(description = "The payload of the push event") @JsonProperty("payload") Payload payload
+        @Schema(description = "The Git reference of the push") @JsonProperty("ref") String ref,
+        @Schema(description = "The commit SHA before the push") @JsonProperty("before") String before,
+        @Schema(description = "The commit SHA after the push") @JsonProperty("after") String after,
+        @Schema(description = "The repository details") @JsonProperty("repository") Repository repository,
+        @Schema(description = "The pusher details") @JsonProperty("pusher") Pusher pusher,
+        @Schema(description = "The organization details") @JsonProperty("organization") Organization organization,
+        @Schema(description = "The sender details") @JsonProperty("sender") Sender sender,
+        @Schema(description = "Flag indicating if the branch was created") @JsonProperty("created") boolean created,
+        @Schema(description = "Flag indicating if the branch was deleted") @JsonProperty("deleted") boolean deleted,
+        @Schema(description = "Flag indicating if the branch was force pushed") @JsonProperty("forced") boolean forced,
+        @Schema(description = "The base reference, if any") @JsonProperty("base_ref") String baseRef,
+        @Schema(description = "The URL to compare changes") @JsonProperty("compare") String compare,
+        @Schema(description = "List of commits in the push") @JsonProperty("commits") List<Commit> commits,
+        @Schema(description = "Details of the head commit") @JsonProperty("head_commit") Commit headCommit
 ) {
-    @Schema(description = "Payload containing details about the push event")
-    public record Payload(
-            @Schema(description = "The Git reference of the push") @JsonProperty("ref") String ref,
-            @Schema(description = "The commit SHA before the push") @JsonProperty("before") String before,
-            @Schema(description = "The commit SHA after the push") @JsonProperty("after") String after,
-            @Schema(description = "The repository details") @JsonProperty("repository") Repository repository,
-            @Schema(description = "The pusher details") @JsonProperty("pusher") Pusher pusher,
-            @Schema(description = "The organization details") @JsonProperty("organization") Organization organization,
-            @Schema(description = "The sender details") @JsonProperty("sender") Sender sender,
-            @Schema(description = "Flag indicating if the branch was created") @JsonProperty("created") boolean created,
-            @Schema(description = "Flag indicating if the branch was deleted") @JsonProperty("deleted") boolean deleted,
-            @Schema(description = "Flag indicating if the branch was force pushed") @JsonProperty("forced") boolean forced,
-            @Schema(description = "The base reference, if any") @JsonProperty("base_ref") String baseRef,
-            @Schema(description = "The URL to compare changes") @JsonProperty("compare") String compare,
-            @Schema(description = "List of commits in the push") @JsonProperty("commits") List<Commit> commits,
-            @Schema(description = "Details of the head commit") @JsonProperty("head_commit") Commit headCommit
-    ) {
-    }
-
     @Schema(description = "Repository details")
     public record Repository(
             @Schema(description = "Repository ID") @JsonProperty("id") Long id,

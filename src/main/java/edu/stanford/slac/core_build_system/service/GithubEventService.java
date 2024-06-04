@@ -38,9 +38,9 @@ public class GithubEventService {
             componentDTO = wrapCatch(
                     () -> componentService.findComponentByProjectUrl(
                             List.of(
-                                    githubPushEventPayload.payload().repository().gitUrl(),
-                                    githubPushEventPayload.payload().repository().sshUrl(),
-                                    githubPushEventPayload.payload().repository().cloneUrl()
+                                    githubPushEventPayload.repository().gitUrl(),
+                                    githubPushEventPayload.repository().sshUrl(),
+                                    githubPushEventPayload.repository().cloneUrl()
                             )
                     ),
                     -1
@@ -48,7 +48,7 @@ public class GithubEventService {
         } catch(Throwable e){
             log.error(
                     "[GH push event for {}] Error finding component {}",
-                    githubPushEventPayload.payload().repository().gitUrl(),
+                    githubPushEventPayload.repository().gitUrl(),
                     e.getMessage()
             );
         }
@@ -61,10 +61,10 @@ public class GithubEventService {
         if (
                 !verifySignature(componentDTO.componentToken(), payload, receivedSignature)
         ){
-            log.error("[GH push event for {}] Signature verification failed", githubPushEventPayload.payload().repository().gitUrl());
+            log.error("[GH push event for {}] Signature verification failed", githubPushEventPayload.repository().gitUrl());
         }
 
-        log.info("[GH push event for {}] Signature verification passed", githubPushEventPayload.payload().repository().gitUrl());
+        log.info("[GH push event for {}] Signature verification passed", githubPushEventPayload.repository().gitUrl());
     }
 
     private boolean verifySignature(String secret, String payloadBody, String receivedSignature) {

@@ -11,19 +11,12 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GitHubPingWebhookDTO(
-        @Schema(description = "The type of event") String event,
-        @Schema(description = "The payload of the ping event") Payload payload
+        @Schema(description = "Zen message from GitHub") String zen,
+        @Schema(description = "ID of the webhook") long hookId,
+        @Schema(description = "Details of the webhook configuration") Hook hook,
+        @Schema(description = "The repository details") Repository repository,
+        @Schema(description = "The sender details") Sender sender
 ) {
-    @Schema(description = "Payload containing details about the ping event")
-    public record Payload(
-            @Schema(description = "Zen message from GitHub") String zen,
-            @Schema(description = "ID of the webhook") long hookId,
-            @Schema(description = "Details of the webhook configuration") Hook hook,
-            @Schema(description = "The repository details") Repository repository,
-            @Schema(description = "The sender details") Sender sender
-    ) {
-    }
-
     @Schema(description = "Hook configuration details")
     public record Hook(
             @Schema(description = "Type of the hook") String type,
