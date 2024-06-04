@@ -11,20 +11,13 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GitHubPullRequestWebhookDTO(
-        @Schema(description = "The type of event") String event,
-        @Schema(description = "The payload of the pull request event") Payload payload
+        @Schema(description = "The action that was performed") String action,
+        @Schema(description = "The number of the pull request") int number,
+        @Schema(description = "Details of the pull request") PullRequest pullRequest,
+        @Schema(description = "The repository details") Repository repository,
+        @Schema(description = "The organization details") Organization organization,
+        @Schema(description = "The sender details") Sender sender
 ) {
-    @Schema(description = "Payload containing details about the pull request event")
-    public record Payload(
-            @Schema(description = "The action that was performed") String action,
-            @Schema(description = "The number of the pull request") int number,
-            @Schema(description = "Details of the pull request") PullRequest pullRequest,
-            @Schema(description = "The repository details") Repository repository,
-            @Schema(description = "The organization details") Organization organization,
-            @Schema(description = "The sender details") Sender sender
-    ) {
-    }
-
     @Schema(description = "Pull request details")
     public record PullRequest(
             @Schema(description = "The API URL of the pull request") String url,
