@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: builder
+spec:
+  containers:
+    - name: builder-container
+      image: busybox
+      command: ["sh", "-c", "ls /mnt"]
+      volumeMounts:
+        - mountPath: /mnt/data
+          name: data-volume
+  restartPolicy: Never
+  volumes:
+    - name: data-volume
+      persistentVolumeClaim:
+        claimName: build-scratch-volume-claim
