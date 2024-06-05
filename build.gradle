@@ -125,7 +125,7 @@ test {
     // Configure test logging
     testLogging {
         // Show standard output and error streams only for failed tests
-        showStandardStreams = true
+        showStandardStreams = false
         // Set the format for the exception stack trace
         exceptionFormat = 'full'
         // Log events for failed     and skipped tests

@@ -43,6 +43,11 @@ public class KubernetesRepositoryTest {
     private final String buildNamespace = "build-ns";
     @BeforeAll
     public void initResources() {
+        // ensure namespace
+        assertDoesNotThrow(()->repository.ensureNamespace(buildNamespace));
+        var resultNamespace = assertDoesNotThrow(()->repository.existsNamespace(buildNamespace));
+        assertThat(resultNamespace).isTrue();
+        // ensure persistent volume and claim
         ClassPathResource cpResourcePV = new ClassPathResource("persistent-volume.yaml");
         ClassPathResource cpResourcePVC = new ClassPathResource("persistent-volume-claim.yaml");
         try (InputStream inputStream = new FileInputStream(cpResourcePV.getFile())) {
@@ -67,11 +72,6 @@ public class KubernetesRepositoryTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        // ensure namespace
-        assertDoesNotThrow(()->repository.ensureNamespace(buildNamespace));
-        var result = assertDoesNotThrow(()->repository.existsNamespace(buildNamespace));
-        assertThat(result).isTrue();
     }
 
 
