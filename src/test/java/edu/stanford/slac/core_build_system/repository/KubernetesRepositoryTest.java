@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.platform.commons.logging.Logger;
+import org.junit.platform.commons.logging.LoggerFactory;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @ActiveProfiles({"test"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class KubernetesRepositoryTest {
+    private static final Logger LOG = LoggerFactory.getLogger(KubernetesRepositoryTest.class);
     @Autowired
     KubernetesClient client;
     @Autowired
@@ -74,22 +77,27 @@ public class KubernetesRepositoryTest {
 
     @Test
     public void createPodAndWaitForTermination() {
+        LOG.info(() -> "Creating a pod and waiting for it to terminate");
         String newPodName = assertDoesNotThrow(()->repository.spinUpBuildPod(buildNamespace, "build-1", "/mnt/build-scratch", "/mnt/build-scratch/build-project-1"));
         await().atMost(30, SECONDS).pollDelay(2, SECONDS).until(
                 () -> {
+                    LOG.info(() -> "Checking if the pod has terminated");
                     var pod = assertDoesNotThrow(()->repository.getPod(buildNamespace, newPodName));
-                    if(pod==null)
+                    if(pod==null) {
+                        LOG.info(() -> "Pod not found");
                         return false;
+                    }
                     var podSpecific = pod.get();
                     return podSpecific.getStatus().getContainerStatuses().size()==1 &&
                     podSpecific.getStatus().getContainerStatuses().getFirst().getState().getTerminated() !=null &&
                     podSpecific.getStatus().getContainerStatuses().getFirst().getState().getTerminated().getReason().compareToIgnoreCase("Completed") == 0;
                 }
         );
+        LOG.info(() -> "Pod has terminated, checking logs");
         var pod = assertDoesNotThrow(()->repository.getPod(buildNamespace, newPodName));
         String log = pod.getLog();
         assertThat(log).isNotEmpty();
-
+        LOG.info(() -> "Deleting the pod");
         var deletePodResult = assertDoesNotThrow(()->repository.deletePod(buildNamespace, newPodName));
         assertThat(deletePodResult).isNotEmpty();
     }
