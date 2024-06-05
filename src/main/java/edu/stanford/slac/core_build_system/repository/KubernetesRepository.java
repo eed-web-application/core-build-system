@@ -56,14 +56,16 @@ public class KubernetesRepository {
      * @param builderName component name
      * @return the newly created podName
      */
-    public String spinUpBuildPod(String namespace, String builderName) {
+    public String spinUpBuildPod(String namespace, String builderName, String mountLocation, String buildLocation) {
         Pod result = null;
         ClassPathResource cpResourcePV = new ClassPathResource("pod-builder-template.yaml");
         try (InputStream inputStream = new FileInputStream(cpResourcePV.getFile())) {
-            Pod pv = Serialization.unmarshal(inputStream , Pod.class);
-            pv.getMetadata().setName("builder-%s".formatted(builderName));
-            pv.getMetadata().setNamespace(namespace);
-            result = client.resource(pv).create();
+            Pod p = Serialization.unmarshal(inputStream , Pod.class);
+            p.getMetadata().setName("builder-%s".formatted(builderName));
+            p.getMetadata().setNamespace(namespace);
+            p.getSpec().getContainers().getFirst().getVolumeMounts().getFirst().setMountPath(mountLocation);
+            p.getSpec().getContainers().getFirst().getEnv().add(new EnvVarBuilder().withName("CBS_BUILD_LOCATION").withValue(buildLocation).build());
+            result = client.resource(p).create();
             log.info("Pod created: {}", result.getMetadata().getName());
             return result.getMetadata().getName();
         } catch (IOException e) {

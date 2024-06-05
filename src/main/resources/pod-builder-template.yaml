@@ -6,9 +6,9 @@ spec:
   containers:
     - name: builder-container
       image: busybox
-      command: ["sh", "-c", "ls /mnt"]
+      command: ["sh", "-c", "echo $CBS_BUILD_LOCATION && ls /mnt"]
       volumeMounts:
-        - mountPath: /mnt/data
+        - mountPath: /mnt/build-scratch
           name: data-volume
   restartPolicy: Never
   volumes:

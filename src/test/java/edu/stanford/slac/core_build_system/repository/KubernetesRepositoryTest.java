@@ -74,7 +74,7 @@ public class KubernetesRepositoryTest {
 
     @Test
     public void createPodAndWaitForTermination() {
-        String newPodName = assertDoesNotThrow(()->repository.spinUpBuildPod(buildNamespace, "build-1"));
+        String newPodName = assertDoesNotThrow(()->repository.spinUpBuildPod(buildNamespace, "build-1", "/mnt/build-scratch", "/mnt/build-scratch/build-project-1"));
         await().atMost(3000, SECONDS).pollDelay(2, SECONDS).until(
                 () -> {
                     var pod = assertDoesNotThrow(()->repository.getPod(buildNamespace, newPodName));
