@@ -3,18 +3,14 @@ package edu.stanford.slac.core_build_system.config;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.SignatureAlgorithm;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
+//import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.kohsuke.github.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
-import java.io.StringReader;
 import java.security.Key;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.Security;
-import java.util.Base64;
 import java.util.Date;
 
 
@@ -28,13 +24,13 @@ public class GitHubClient {
     private long ttMsec = 600000;
     private PrivateKey getKey() throws Exception {
         if (Security.getProvider("BC") == null) {
-            Security.addProvider(new BouncyCastleProvider());
+//            Security.addProvider(new BouncyCastleProvider());
         }
-        String keyStr = new String(Base64.getDecoder().decode(githubSecretKey));
-        PEMReader pemReader = new PEMReader(new StringReader(keyStr));
-        KeyPair keyPair = (KeyPair) pemReader.readObject();
-        PrivateKey key = keyPair.getPrivate();
-        return key;
+//        String keyStr = new String(Base64.getDecoder().decode(githubSecretKey));
+//        PEMReader pemReader = new PEMReader(new StringReader(keyStr));
+//        KeyPair keyPair = (KeyPair) pemReader.readObject();
+//        PrivateKey key = keyPair.getPrivate();
+        return null;
     }
 
     private String createJWT() throws Exception {
