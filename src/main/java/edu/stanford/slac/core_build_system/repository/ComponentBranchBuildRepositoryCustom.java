@@ -7,6 +7,15 @@ import java.time.Instant;
 import java.util.Optional;
 
 public interface ComponentBranchBuildRepositoryCustom {
+
+    /**
+     * Update the status of the build
+     * @param id The identifier of the document
+     * @param status The new status of the build
+     * @return True if the status was updated, false otherwise
+     */
+    boolean updateBuilderName(String id, String builderName);
+
     /**
      * Find and lock the next document that is not locked or the lock has expired
      * @param lockTimeout The time when the lock will expire

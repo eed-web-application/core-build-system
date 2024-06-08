@@ -1,5 +1,6 @@
 package edu.stanford.slac.core_build_system.repository;
 
+import edu.stanford.slac.core_build_system.model.K8SPodBuilder;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -56,18 +57,19 @@ public class KubernetesRepository {
      * @param builderName component name
      * @return the newly created podName
      */
-    public String spinUpBuildPod(String namespace, String builderName, String mountLocation, String buildLocation) {
+    public Pod spinUpBuildPod(K8SPodBuilder podBuilder) {
         Pod result = null;
         ClassPathResource cpResourcePV = new ClassPathResource("pod-builder-template.yaml");
         try (InputStream inputStream = new FileInputStream(cpResourcePV.getFile())) {
             Pod p = Serialization.unmarshal(inputStream , Pod.class);
-            p.getMetadata().setName("builder-%s".formatted(builderName));
-            p.getMetadata().setNamespace(namespace);
-            p.getSpec().getContainers().getFirst().getVolumeMounts().getFirst().setMountPath(mountLocation);
-            p.getSpec().getContainers().getFirst().getEnv().add(new EnvVarBuilder().withName("CBS_BUILD_LOCATION").withValue(buildLocation).build());
+            p.getMetadata().setName("builder-%s".formatted(podBuilder.getBuilderName()));
+            p.getMetadata().setNamespace(podBuilder.getNamespace());
+            p.getSpec().getContainers().getFirst().setImage(podBuilder.getDockerImage());
+            p.getSpec().getContainers().getFirst().getVolumeMounts().getFirst().setMountPath(podBuilder.getMountLocation());
+            p.getSpec().getContainers().getFirst().getEnv().add(new EnvVarBuilder().withName("CBS_BUILD_LOCATION").withValue(podBuilder.getBuildLocation()).build());
             result = client.resource(p).create();
             log.info("Pod created: {}", result.getMetadata().getName());
-            return result.getMetadata().getName();
+            return p;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

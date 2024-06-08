@@ -21,13 +21,26 @@ public class ComponentBranchBuildRepositoryImpl implements ComponentBranchBuildR
 
 
     @Override
+    public boolean updateBuilderName(String id, String builderName) {
+        Query query = new Query(
+                new Criteria("id").is(id)
+        );
+        Update update = new Update().set("builderName", builderName);
+        return mongoTemplate.updateFirst(query, update, ComponentBranchBuild.class).getModifiedCount() > 0;
+    }
+
+    @Override
     public Optional<ComponentBranchBuild> findAndLockNextDocument(Instant lockTimeout) throws UnknownHostException {
         // Find an unlocked or expired lock document and atomically lock it
         Query query = new Query(
                 new Criteria().orOperator(
-                        Criteria.where("lockTime").lt(lockTimeout),
+                        new Criteria().andOperator(
+                                Criteria.where("lockTime").lt(lockTimeout),
+                                Criteria.where("buildStatus").is("PENDING")
+                        ),
                         Criteria.where("lockTime").is(null)
                 )
+
         ).with(Sort.by(Sort.Order.asc("lastProcessTime"))).limit(1);
 
         Update update = new Update().set("lockTime", Instant.now()).set("lockedBy", InetAddress.getLocalHost().getHostName());

@@ -6,10 +6,7 @@ import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 import edu.stanford.slac.core_build_system.utility.GitServer;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GitHub;
@@ -65,7 +62,6 @@ public class ComponentBuildServiceTest {
     @BeforeAll
     public void setUp() throws Exception {
         mongoTemplate.remove(new Query(), Component.class);
-        mongoTemplate.remove(new Query(), ComponentBranchBuild.class);
 
         when(ghInstancer.getClient()).thenReturn(gitHub);
         when(ghInstancer.ghOrganization()).thenReturn(ghOrganization);
@@ -126,6 +122,11 @@ public class ComponentBuildServiceTest {
     @AfterAll
     public static void tearDown() {
         GitServer.cleanup();
+    }
+
+    @BeforeEach
+    public void cleanBuild() {
+        mongoTemplate.remove(new Query(), ComponentBranchBuild.class);
     }
 
     @Test

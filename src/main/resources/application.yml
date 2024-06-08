@@ -36,6 +36,7 @@ edu:
         github-app-installation-id: ${CBS_GH_APP_INST_ID}
         build-root-scratch-directory: ${CBS_BUILD_ROOT_SCRATCH_DIR:/tmp/cbs-build}
         artifact-root-directory: ${CBS_ARTIFACT_ROOT_DIR:/tmp/cbs-artifact}
+        k8s-build-namespace: ${CBS_K8S_BUILD_NAMESPACE:build-ns}
       ad:
         eed:
           baselib:

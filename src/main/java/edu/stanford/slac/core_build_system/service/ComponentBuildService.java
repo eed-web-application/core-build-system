@@ -11,16 +11,21 @@ import edu.stanford.slac.core_build_system.exception.ComponentNotFoundByName;
 import edu.stanford.slac.core_build_system.model.Branch;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
+import edu.stanford.slac.core_build_system.model.K8SPodBuilder;
 import edu.stanford.slac.core_build_system.repository.ComponentBranchBuildRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
 import edu.stanford.slac.core_build_system.repository.GitServerRepository;
+import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
+import io.fabric8.kubernetes.api.model.Pod;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.UUID;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.assertion;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
@@ -29,6 +34,7 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 @Service
 @AllArgsConstructor
 public class ComponentBuildService {
+    private final KubernetesRepository kubernetesRepository;
     private final CoreBuildProperties coreBuildProperties;
     private final GitServerRepository gitServerRepository;
     private final ComponentRepository componentRepository;
@@ -41,6 +47,7 @@ public class ComponentBuildService {
      * @param componentName The name of the component
      * @param branchName    The name of the branch
      */
+    @Transactional
     public String startBuild(String componentName, String branchName) {
         Component comp = wrapCatch(
                 () -> componentRepository.findByName(componentName)
@@ -57,7 +64,7 @@ public class ComponentBuildService {
         // check that the component has a repository URL
         assertion(
                 ControllerLogicException.builder().build(),
-                ()->comp.getUrl()!=null && !comp.getUrl().isBlank()
+                () -> comp.getUrl() != null && !comp.getUrl().isBlank()
         );
         // check if branch is present
         Branch branch = comp.getBranches().stream().filter(b -> b.getBranchName().compareToIgnoreCase(branchName) == 0)
@@ -69,9 +76,9 @@ public class ComponentBuildService {
                                 .build()
                 );
 
-        // we have branch
+        // save the build
         var savedBuild = wrapCatch(
-                ()->componentBranchBuildRepository.save(
+                () -> componentBranchBuildRepository.save(
                         ComponentBranchBuild.builder()
                                 .componentId(comp.getId())
                                 .branchName(branchName)
@@ -83,6 +90,24 @@ public class ComponentBuildService {
     }
 
     /**
+     * Update the builder name
+     *
+     * @param id          The identifier of the build
+     * @param builderName The new name of the builder
+     * @return true if the update was successful
+     */
+    public boolean updateBuilderName(String id, String builderName) {
+        // update the builder name
+        return wrapCatch(
+                () -> componentBranchBuildRepository.updateBuilderName(
+                        id,
+                        builderName
+                ),
+                -1
+        );
+    }
+
+    /**
      * Update the status of a build
      *
      * @param id     The identifier of the build
@@ -90,15 +115,15 @@ public class ComponentBuildService {
      */
     public void updateStatus(String id, BuildStatusDTO status) {
         ComponentBranchBuild cbb = wrapCatch(
-                ()->componentBranchBuildRepository.findById(id)
+                () -> componentBranchBuildRepository.findById(id)
                         .orElseThrow(
-                                ()-> BuildNotFound.byId().id(id).errorCode(-1).build()
+                                () -> BuildNotFound.byId().id(id).errorCode(-1).build()
                         ),
                 -1
         );
         cbb.setBuildStatus(componentBranchBuildMapper.toModel(status));
         wrapCatch(
-                ()->componentBranchBuildRepository.save(cbb),
+                () -> componentBranchBuildRepository.save(cbb),
                 -2
         );
     }
@@ -130,10 +155,10 @@ public class ComponentBuildService {
      */
     public ComponentBranchBuildDTO findBuildById(String buildId) {
         return wrapCatch(
-                ()->componentBranchBuildRepository.findById(buildId)
+                () -> componentBranchBuildRepository.findById(buildId)
                         .map(componentBranchBuildMapper::toDTO)
                         .orElseThrow(
-                                ()-> BuildNotFound.byId().id(buildId).errorCode(-1).build()
+                                () -> BuildNotFound.byId().id(buildId).errorCode(-1).build()
                         ),
                 -2
         );

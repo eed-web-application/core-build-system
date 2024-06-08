@@ -18,4 +18,6 @@ public class CoreBuildProperties {
 
     private String buildRootScratchDirectory;
     private String artifactRootDirectory;
+
+    private String k8sBuildNamespace;
 }
