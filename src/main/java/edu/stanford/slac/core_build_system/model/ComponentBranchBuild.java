@@ -4,8 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.data.annotation.*;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.annotation.*;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 
@@ -34,7 +34,7 @@ public class ComponentBranchBuild {
     private String branchName;
 
     /**
-     * The name of the builder that is used to perform this build
+     * The name of the pod builder that is used to perform this build
      */
     private String builderName;
 

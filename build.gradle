@@ -76,7 +76,8 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5' // or 'io.jsonwebtoken:jjwt-gson:0.12.5' for gson
-//    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:6.9.0.202403050737-r'
 
     // github api
     implementation'org.kohsuke:github-api:1.321'
@@ -124,12 +125,15 @@ test {
     exclude '**/cis_api/**'
     // Configure test logging
     testLogging {
-        // Show standard output and error streams only for failed tests
-        showStandardStreams = false
-        // Set the format for the exception stack trace
-        exceptionFormat = 'full'
-        // Log events for failed     and skipped tests
-        events "skipped", "failed"
+        events 'FAILED',
+                'SKIPPED',
+                'STANDARD_ERROR',
+                'STANDARD_OUT'
+
+        showCauses true
+        showExceptions true
+        showStackTraces true
+        showStandardStreams true
     }
 
     // Customize the logging for test results

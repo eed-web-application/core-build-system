@@ -269,39 +269,6 @@ public class ComponentService {
     }
 
     /**
-     * Start a new build for a component/branch
-     *
-     * @param componentName The name of the component
-     * @param branchName    The name of the branch
-     */
-    public void startBuild(String componentName, String branchName) {
-        Component comp = wrapCatch(
-                () -> componentRepository.findByName(componentName)
-                        .orElseThrow(
-                                () ->
-                                        ControllerLogicException.builder()
-                                                .errorCode(-1)
-                                                .errorMessage("The component is in use by other components")
-                                                .build()
-
-                        ),
-                -2
-        );
-
-        // check if branch is present
-        Branch branch = comp.getBranches().stream().filter(b -> b.getBranchName().compareToIgnoreCase(branchName) == 0)
-                .findAny()
-                .orElseThrow(
-                        () -> BranchNotFound.byName()
-                                .errorCode(-3)
-                                .branchName(branchName)
-                                .build()
-                );
-
-        // we have branch
-    }
-
-    /**
      * Create an artifact by engine name and component list
      *
      * @param engineName   The name of the engine

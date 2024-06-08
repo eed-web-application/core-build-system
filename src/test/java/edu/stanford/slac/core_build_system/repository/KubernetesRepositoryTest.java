@@ -1,5 +1,6 @@
 package edu.stanford.slac.core_build_system.repository;
 
+import edu.stanford.slac.core_build_system.config.GitHubClient;
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -15,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -36,6 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class KubernetesRepositoryTest {
     private static final Logger LOG = LoggerFactory.getLogger(KubernetesRepositoryTest.class);
+    @MockBean
+    GitHubClient.GHInstancer ghInstancer;
     @Autowired
     KubernetesClient client;
     @Autowired
