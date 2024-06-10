@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 
 @Log4j2
@@ -83,7 +84,15 @@ public class KubernetesRepository {
         return client.pods().inNamespace(namespace).withName(podName);
     }
 
+    /**
+     * Delete the pod
+     * @return the pod
+     */
     public List<StatusDetails> deletePod(String namespace, String podName){
-        return client.pods().inNamespace(namespace).withName(podName).delete();
+        var pod = client.pods().inNamespace(namespace).withName(podName);
+        if(pod == null){
+            return Collections.emptyList();
+        }
+        return pod.delete();
     }
 }

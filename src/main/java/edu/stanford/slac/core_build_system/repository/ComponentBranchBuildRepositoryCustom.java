@@ -1,5 +1,6 @@
 package edu.stanford.slac.core_build_system.repository;
 
+import edu.stanford.slac.core_build_system.model.BuildStatus;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 
 import java.net.UnknownHostException;
@@ -28,4 +29,10 @@ public interface ComponentBranchBuildRepositoryCustom {
      * @return True if the lock was released, false otherwise
      */
     boolean releaseLock(String buildId) throws UnknownHostException;
+    /**
+     * Release the lock on the document
+     * @param buildId The identifier of the document
+     * @return True if the lock was released, false otherwise
+     */
+    boolean releaseLock(String buildId, BuildStatus newStatus) throws UnknownHostException;
 }

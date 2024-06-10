@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface LogEntryRepository extends MongoRepository<LogEntry, String> {
     List<LogEntry>findByBuildId(String buildId);
+    void deleteAllByBuildId(String buildId);
 }

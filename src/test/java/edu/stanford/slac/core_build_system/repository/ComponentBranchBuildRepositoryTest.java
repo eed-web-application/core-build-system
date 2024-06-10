@@ -70,7 +70,7 @@ public class ComponentBranchBuildRepositoryTest {
 
 
         boolean deleteResult = assertDoesNotThrow(
-                () -> componentBranchBuildRepository.releaseLock(newBuild.getId())
+                () -> componentBranchBuildRepository.releaseLock(newBuild.getId(), BuildStatus.SUCCESS)
         );
         assertThat(deleteResult).isTrue();
     }

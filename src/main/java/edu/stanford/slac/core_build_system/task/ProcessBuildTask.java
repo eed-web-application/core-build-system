@@ -33,6 +33,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
+import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.IN_PROGRESS;
+import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.PENDING;
 
 @Log4j2
 @Component
@@ -70,6 +72,7 @@ public class ProcessBuildTask {
                 () -> componentService.findById(buildToProcess.componentId()),
                 -2
         );
+        BuildStatusDTO newStatus = PENDING;
         String uniqueBuildIdentification = "[%s-%s-%s]".formatted(buildToProcess.componentId(), component.name(), buildToProcess.branchName());
         log.info("[{}] Start processing", uniqueBuildIdentification);
         try{
@@ -80,41 +83,41 @@ public class ProcessBuildTask {
                     String newBuilderName = spinPodForBuild(component, buildToProcess.branchName());
                     componentBuildService.updateBuilderName(buildToProcess.id(), newBuilderName);
                     // spin-up the pod
-                    componentBuildService.updateStatus(buildToProcess.id(), BuildStatusDTO.IN_PROGRESS);
+                    newStatus = IN_PROGRESS;
                     break;
                 case IN_PROGRESS:
                     log.info("[{}] Build is in progress", uniqueBuildIdentification);
-                    BuildStatusDTO status =  getPodStatus(buildToProcess);
-                    if(status == BuildStatusDTO.IN_PROGRESS) {
+                    BuildStatusDTO podStatus =  getPodStatus(buildToProcess);
+                    if(podStatus == IN_PROGRESS) {
+                        newStatus = IN_PROGRESS;
                         log.info("[{}] Build is still in progress", uniqueBuildIdentification);
                         return;
                     } else {
-                        if (status == BuildStatusDTO.SUCCESS) {
+                        // store the log before switching the status
+                        storeLog(buildToProcess);
+                        newStatus = podStatus;
+                        if (podStatus == BuildStatusDTO.SUCCESS) {
                             log.info("[{}] Build is completed", uniqueBuildIdentification);
-                            componentBuildService.updateStatus(buildToProcess.id(), BuildStatusDTO.SUCCESS);
                         } else {
                             log.info("[{}] Build failed", uniqueBuildIdentification);
-                            componentBuildService.updateStatus(buildToProcess.id(), BuildStatusDTO.FAILED);
                         }
-                        storeLog(buildToProcess);
                     }
                     break;
                 case SUCCESS:
                     log.info("[{}] Already completed", uniqueBuildIdentification);
-                    // execute the pod
                     break;
                 case FAILED:
                     log.info("[{}] Build Already failed", uniqueBuildIdentification);
                     break;
                 default:
                     log.error("[{}] Unknown build status", uniqueBuildIdentification);
-                    return;
+                    break;
             }
         }catch (Exception e) {
             log.error("[{}] Error processing build", uniqueBuildIdentification, e);
         } finally {
             // release lock on build
-            boolean lockReleased = componentBuildService.releaseLock(buildToProcess.id());
+            boolean lockReleased = componentBuildService.releaseLock(buildToProcess.id(), newStatus);
             if (lockReleased) {
                 log.info("[{}] Lock released", uniqueBuildIdentification);
             } else {
@@ -139,7 +142,7 @@ public class ProcessBuildTask {
                 !foundPod.get().getStatus().getContainerStatuses().isEmpty() &&
                 foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated() != null;
         boolean success  =   terminated && foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated().getReason().compareToIgnoreCase("Completed") == 0;
-        return terminated && success ? BuildStatusDTO.SUCCESS : (terminated ? BuildStatusDTO.FAILED : BuildStatusDTO.IN_PROGRESS);
+        return terminated && success ? BuildStatusDTO.SUCCESS : (terminated ? BuildStatusDTO.FAILED : IN_PROGRESS);
     }
 
     /**

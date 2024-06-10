@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.assertion;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
+import static edu.stanford.slac.core_build_system.utility.RetryableOperationUtility.retry;
 
 @Log4j2
 @Service
@@ -89,6 +90,54 @@ public class ComponentBuildService {
     }
 
     /**
+     * Delete a build
+     *
+     * @param buildId The identifier of the build
+     */
+    @Transactional
+    public void deleteBuild(String buildId) {
+        log.info("Deleting build {}", buildId);
+        ComponentBranchBuild cbb = wrapCatch(
+                () -> componentBranchBuildRepository.findById(buildId)
+                        .orElseThrow(
+                                () -> BuildNotFound.byId().id(buildId).errorCode(-1).build()
+                        ),
+                -1
+        );
+        /// delete the log entries
+        log.info("Deleting log entries for build {}", buildId);
+        wrapCatch(
+                () -> retry(() -> {
+                    logEntryRepository.deleteAllByBuildId(buildId);
+                    return null;
+                }, 3), // Retry up to 3 times
+                -1
+        );
+        // delete the build
+        log.info("Deleting build {}", buildId);
+        wrapCatch(
+                () -> retry(() -> {
+                    componentBranchBuildRepository.deleteById(buildId);
+                    return null;
+                }, 3), // Retry up to 3 times
+                -3
+        );
+
+        // delete pod associated with the build
+        log.info("Deleting pod for build {}", buildId);
+        wrapCatch(
+                () -> retry(() -> {
+                    kubernetesRepository.deletePod(
+                            coreBuildProperties.getK8sBuildNamespace(),
+                            cbb.getBuilderName()
+                    );
+                    return null;
+                }, 3), // Retry up to 3 times
+                -2
+        );
+    }
+
+    /**
      * Update the builder name
      *
      * @param id          The identifier of the build
@@ -139,9 +188,9 @@ public class ComponentBuildService {
         ).map(componentBranchBuildMapper::toDTO);
     }
 
-    public Boolean releaseLock(String id) {
+    public Boolean releaseLock(String id, BuildStatusDTO newStatus) {
         return wrapCatch(
-                () -> componentBranchBuildRepository.releaseLock(id),
+                () -> componentBranchBuildRepository.releaseLock(id, componentBranchBuildMapper.toModel(newStatus)),
                 -1
         );
     }
@@ -174,7 +223,7 @@ public class ComponentBuildService {
                 () -> logEntryRepository.findByBuildId(buildId),
                 -1
         );
-        return  foundLogs.stream()
+        return foundLogs.stream()
                 .map(logEntryMapper::toDTO)
                 .toList();
     }

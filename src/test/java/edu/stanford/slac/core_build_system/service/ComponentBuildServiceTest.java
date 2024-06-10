@@ -1,10 +1,13 @@
 package edu.stanford.slac.core_build_system.service;
 
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
+import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
+import edu.stanford.slac.core_build_system.exception.BuildNotFound;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 import edu.stanford.slac.core_build_system.model.LogEntry;
+import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
 import edu.stanford.slac.core_build_system.utility.GitServer;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.junit.jupiter.api.*;
@@ -25,9 +28,10 @@ import java.util.List;
 import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @AutoConfigureMockMvc
@@ -59,6 +63,10 @@ public class ComponentBuildServiceTest {
 
     @Autowired
     MongoTemplate mongoTemplate;
+    @Autowired
+    private KubernetesRepository kubernetesRepository;
+    @Autowired
+    private CoreBuildProperties coreBuildProperties;
 
     @BeforeAll
     public void setUp() throws Exception {
@@ -161,6 +169,24 @@ public class ComponentBuildServiceTest {
         List<LogEntryDTO> buildLog = assertDoesNotThrow(
                 () -> componentBuildService.findLogForBuild(buildId)
         );
-        assertThat(buildLog).isNotNull();
+        assertThat(buildLog).isNotEmpty();
+
+        // delete build
+        assertDoesNotThrow(
+                () -> componentBuildService.deleteBuild(buildId)
+        );
+
+        // check for resource has been deleted
+        BuildNotFound buildNotFoundException = assertThrows(
+                BuildNotFound.class,
+                () -> componentBuildService.findBuildById(buildId)
+        );
+        assertThat(buildNotFoundException).isNotNull();
+
+        // check that no more are present
+        List<LogEntryDTO> buildLogEmpty = assertDoesNotThrow(
+                () -> componentBuildService.findLogForBuild(buildId)
+        );
+        assertThat(buildLogEmpty).isEmpty();
     }
 }

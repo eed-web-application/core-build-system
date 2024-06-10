@@ -41,7 +41,7 @@ public class ComponentBranchBuildRepositoryImpl implements ComponentBranchBuildR
                                 Criteria.where("buildStatus").nin(BuildStatus.IN_PROGRESS)
                         ),
                         new Criteria().andOperator(
-                                Criteria.where("lockTime").is(null),
+                                Criteria.where("lockTime").exists(false),
                                 Criteria.where("buildStatus").nin(BuildStatus.SUCCESS, BuildStatus.FAILED)
                         )
                 )
@@ -59,7 +59,26 @@ public class ComponentBranchBuildRepositoryImpl implements ComponentBranchBuildR
                         Criteria.where("id").is(buildId)
                 )
         );
-        Update u = new Update().unset("lockTime").unset("lockedBy").set("lastProcessTime", Instant.now());
+        Update u = new Update()
+                .unset("lockTime")
+                .unset("lockedBy")
+                .set("lastProcessTime", Instant.now());
+        UpdateResult ur = mongoTemplate.updateFirst(query, u, ComponentBranchBuild.class);
+        return ur.getModifiedCount() > 0;
+    }
+
+    @Override
+    public boolean releaseLock(String buildId, BuildStatus buildStatus) throws UnknownHostException {
+        Query query = new Query(
+                new Criteria().orOperator(
+                        Criteria.where("id").is(buildId)
+                )
+        );
+        Update u = new Update()
+                .unset("lockTime")
+                .unset("lockedBy")
+                .set("lastProcessTime", Instant.now())
+                .set("buildStatus", buildStatus);
         UpdateResult ur = mongoTemplate.updateFirst(query, u, ComponentBranchBuild.class);
         return ur.getModifiedCount() > 0;
     }
