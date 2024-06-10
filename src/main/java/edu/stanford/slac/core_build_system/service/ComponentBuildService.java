@@ -3,7 +3,9 @@ package edu.stanford.slac.core_build_system.service;
 import edu.stanford.slac.ad.eed.baselib.exception.ControllerLogicException;
 import edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.ComponentBranchBuildDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.LogEntryDTO;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentBranchBuildMapper;
+import edu.stanford.slac.core_build_system.api.v1.mapper.LogEntryMapper;
 import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.exception.BranchNotFound;
 import edu.stanford.slac.core_build_system.exception.BuildNotFound;
@@ -11,12 +13,7 @@ import edu.stanford.slac.core_build_system.exception.ComponentNotFoundByName;
 import edu.stanford.slac.core_build_system.model.Branch;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
-import edu.stanford.slac.core_build_system.model.K8SPodBuilder;
-import edu.stanford.slac.core_build_system.repository.ComponentBranchBuildRepository;
-import edu.stanford.slac.core_build_system.repository.ComponentRepository;
-import edu.stanford.slac.core_build_system.repository.GitServerRepository;
-import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
-import io.fabric8.kubernetes.api.model.Pod;
+import edu.stanford.slac.core_build_system.repository.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -24,8 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.assertion;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
@@ -34,6 +31,8 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 @Service
 @AllArgsConstructor
 public class ComponentBuildService {
+    private final LogEntryMapper logEntryMapper;
+    private final LogEntryRepository logEntryRepository;
     private final KubernetesRepository kubernetesRepository;
     private final CoreBuildProperties coreBuildProperties;
     private final GitServerRepository gitServerRepository;
@@ -162,5 +161,21 @@ public class ComponentBuildService {
                         ),
                 -2
         );
+    }
+
+    /**
+     * Get the log for a build
+     *
+     * @param buildId The identifier of the build
+     * @return The log for the build
+     */
+    public List<LogEntryDTO> findLogForBuild(String buildId) {
+        var foundLogs = wrapCatch(
+                () -> logEntryRepository.findByBuildId(buildId),
+                -1
+        );
+        return  foundLogs.stream()
+                .map(logEntryMapper::toDTO)
+                .toList();
     }
 }

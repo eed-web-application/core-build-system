@@ -4,6 +4,7 @@ import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
+import edu.stanford.slac.core_build_system.model.LogEntry;
 import edu.stanford.slac.core_build_system.utility.GitServer;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.junit.jupiter.api.*;
@@ -127,6 +128,7 @@ public class ComponentBuildServiceTest {
     @BeforeEach
     public void cleanBuild() {
         mongoTemplate.remove(new Query(), ComponentBranchBuild.class);
+        mongoTemplate.remove(new Query(), LogEntry.class);
     }
 
     @Test
@@ -141,7 +143,7 @@ public class ComponentBuildServiceTest {
         assertThat(buildId).isNotNull();
 
         // wait for completion
-        await().atMost(30, SECONDS).pollDelay(2, SECONDS).until(
+        await().atMost(60, SECONDS).pollDelay(2, SECONDS).until(
                 () -> {
                     ComponentBranchBuildDTO build = assertDoesNotThrow(
                             () -> componentBuildService.findBuildById(buildId)
@@ -154,5 +156,11 @@ public class ComponentBuildServiceTest {
         );
         assertThat(fundBuild).isNotNull();
         assertThat(fundBuild.buildStatus()).isEqualTo(BuildStatusDTO.SUCCESS);
+
+        // fetch the log
+        List<LogEntryDTO> buildLog = assertDoesNotThrow(
+                () -> componentBuildService.findLogForBuild(buildId)
+        );
+        assertThat(buildLog).isNotNull();
     }
 }

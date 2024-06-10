@@ -1,8 +1,10 @@
 package edu.stanford.slac.core_build_system.repository;
 import com.mongodb.client.result.UpdateResult;
+import edu.stanford.slac.core_build_system.model.BuildStatus;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -36,15 +38,18 @@ public class ComponentBranchBuildRepositoryImpl implements ComponentBranchBuildR
                 new Criteria().orOperator(
                         new Criteria().andOperator(
                                 Criteria.where("lockTime").lt(lockTimeout),
-                                Criteria.where("buildStatus").is("PENDING")
+                                Criteria.where("buildStatus").nin(BuildStatus.IN_PROGRESS)
                         ),
-                        Criteria.where("lockTime").is(null)
+                        new Criteria().andOperator(
+                                Criteria.where("lockTime").is(null),
+                                Criteria.where("buildStatus").nin(BuildStatus.SUCCESS, BuildStatus.FAILED)
+                        )
                 )
 
         ).with(Sort.by(Sort.Order.asc("lastProcessTime"))).limit(1);
 
         Update update = new Update().set("lockTime", Instant.now()).set("lockedBy", InetAddress.getLocalHost().getHostName());
-        return Optional.ofNullable(mongoTemplate.findAndModify(query, update, ComponentBranchBuild.class));
+        return Optional.ofNullable(mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true),ComponentBranchBuild.class));
     }
 
     @Override
