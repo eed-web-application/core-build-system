@@ -13,6 +13,7 @@ import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
 import edu.stanford.slac.core_build_system.repository.LogEntryRepository;
 import edu.stanford.slac.core_build_system.service.ComponentBuildService;
 import edu.stanford.slac.core_build_system.service.ComponentService;
+import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.dsl.LogWatch;
 import io.fabric8.kubernetes.client.dsl.PodResource;
@@ -33,10 +34,7 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Stack;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -83,55 +81,61 @@ public class ProcessBuildTask {
                 -2
         );
         BuildStatusDTO newStatus = PENDING;
-        String uniqueBuildIdentification = "[%s-%s-%s]".formatted(buildToProcess.componentId(), component.name(), buildToProcess.branchName());
-        log.info("[{}] Start processing", uniqueBuildIdentification);
+        String uniqueBuildIdentification = "[%s-%s-%s-%s]".formatted(buildToProcess.componentId(), component.name(), buildToProcess.branchName(), buildToProcess.buildOs());
+        log.info("{} Start processing", uniqueBuildIdentification);
         try{
             BuildStatusDTO buildStatus = buildToProcess.buildStatus();
             switch (buildStatus) {
                 case PENDING:
-                    log.info("[{}] Build is pending", uniqueBuildIdentification);
+                    log.info("{} Build is pending", uniqueBuildIdentification);
                     BuildInfo buildInfo = spinPodForBuild(component, buildToProcess);
                     componentBuildService.updateBuildInfo(buildToProcess.id(), buildInfo);
                     // spin-up the pod
                     newStatus = IN_PROGRESS;
                     break;
                 case IN_PROGRESS:
-                    log.info("[{}] Build is in progress", uniqueBuildIdentification);
+                    log.info("{} Build is in progress", uniqueBuildIdentification);
                     BuildStatusDTO podStatus =  getPodStatus(buildToProcess);
                     if(podStatus == IN_PROGRESS) {
                         newStatus = IN_PROGRESS;
-                        log.info("[{}] Build is still in progress", uniqueBuildIdentification);
+                        PodResource foundPod = kubernetesRepository.getPod(
+                                coreBuildProperties.getK8sBuildNamespace(),
+                                buildToProcess.buildInfo().builderName()
+                        );
+                        List<ContainerStatus> containerStatus = foundPod.get().getStatus().getContainerStatuses();
+                        String containerLog = foundPod.getLog();
+                        log.info("{} Build is still in progress ->\n{}\n{}", uniqueBuildIdentification, containerStatus, containerLog);
                         return;
                     } else {
                         // store the log before switching the status
                         storeLog(buildToProcess);
                         newStatus = podStatus;
                         if (podStatus == BuildStatusDTO.SUCCESS) {
-                            log.info("[{}] Build is completed", uniqueBuildIdentification);
+                            log.info("{} Build is completed", uniqueBuildIdentification);
                         } else {
-                            log.info("[{}] Build failed", uniqueBuildIdentification);
+                            log.info("{} Build failed", uniqueBuildIdentification);
                         }
                     }
                     break;
                 case SUCCESS:
-                    log.info("[{}] Already completed", uniqueBuildIdentification);
+                    log.info("{} Already completed", uniqueBuildIdentification);
                     break;
                 case FAILED:
-                    log.info("[{}] Build Already failed", uniqueBuildIdentification);
+                    log.info("{} Build Already failed", uniqueBuildIdentification);
                     break;
                 default:
-                    log.error("[{}] Unknown build status", uniqueBuildIdentification);
+                    log.error("{} Unknown build status", uniqueBuildIdentification);
                     break;
             }
         }catch (Exception e) {
-            log.error("[{}] Error processing build", uniqueBuildIdentification, e);
+            log.error("{} Error processing build", uniqueBuildIdentification, e);
         } finally {
             // release lock on build
             boolean lockReleased = componentBuildService.releaseLock(buildToProcess.id(), newStatus);
             if (lockReleased) {
-                log.info("[{}] Lock released", uniqueBuildIdentification);
+                log.info("{} Lock released", uniqueBuildIdentification);
             } else {
-                log.error("[{}] Lock not released", uniqueBuildIdentification);
+                log.error("{} Lock not released", uniqueBuildIdentification);
             }
         }
 
@@ -153,6 +157,20 @@ public class ProcessBuildTask {
                 foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated() != null;
         boolean success  =   terminated && foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated().getReason().compareToIgnoreCase("Completed") == 0;
         return terminated && success ? BuildStatusDTO.SUCCESS : (terminated ? BuildStatusDTO.FAILED : IN_PROGRESS);
+    }
+
+    /**
+     * Get the container status of the pod
+     *
+     * @param buildToProcess The build to process
+     * @return The container status of the pod
+     */
+    private List<ContainerStatus> getPodContainerStatus(ComponentBranchBuildDTO buildToProcess) {
+        PodResource foundPod = kubernetesRepository.getPod(
+                coreBuildProperties.getK8sBuildNamespace(),
+                buildToProcess.buildInfo().builderName()
+        );
+        return foundPod.get().getStatus().getContainerStatuses();
     }
 
     /**

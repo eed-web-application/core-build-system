@@ -170,7 +170,11 @@ public class ComponentBuildServiceTest {
         assertThat(buildIds).isNotNull();
 
         // wait for completion
-        await().atMost(60, SECONDS).pollDelay(2, SECONDS).until(
+        await()
+                .atMost(60, SECONDS)
+                .pollDelay(2, SECONDS)
+                .pollInterval(2, SECONDS)
+                .until(
                 () -> {
                     List<Boolean> completionState = new ArrayList<>();
                     // fetch each single build
