@@ -31,6 +31,8 @@ public record ComponentDTO(
         String approvalRule,
         @Schema(description = "The testing criteria of the component")
         String testingCriteria,
+        @Schema(description = "The build command of the component")
+        String buildInstructions,
         Set<String> approvalIdentity,
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
         Set<ComponentDependencyDTO> dependOn,

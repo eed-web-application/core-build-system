@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "Enum representing the OS image for execute the build")
 public enum BuildOSDTO {
     UBUNTU,
+    RHEL8,
     RHEL7,
     RHEL6,
     RHEL5,
+    ROCKY9,
 }

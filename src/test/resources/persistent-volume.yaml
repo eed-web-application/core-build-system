@@ -9,7 +9,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   local:
-    path: /tmp
+    path: /tmp/host-tmp
   nodeAffinity:
     required:
       nodeSelectorTerms:

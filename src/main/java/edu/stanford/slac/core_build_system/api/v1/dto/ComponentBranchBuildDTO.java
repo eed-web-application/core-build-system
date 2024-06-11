@@ -2,6 +2,7 @@ package edu.stanford.slac.core_build_system.api.v1.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import edu.stanford.slac.core_build_system.model.BuildOS;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.ToString;
@@ -21,6 +22,10 @@ public record ComponentBranchBuildDTO(
         String branchName,
         @Schema(description = "The information about current build on k8s pod")
         BuildInfoDTO buildInfo,
+        @Schema(description = "The identifier of the build image that is used to perform this build")
+        BuildOS buildOs,
+        @Schema(description = "The URL of the image that is used to perform this build")
+        String buildImageUrl,
         @Schema(description = "The status of the build")
         BuildStatusDTO buildStatus,
         @Schema(description = "The date and time when the build was started")

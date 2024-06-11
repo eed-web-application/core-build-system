@@ -25,9 +25,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -43,7 +45,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest()
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-@ActiveProfiles({"test", "async-build-processing"})
+@ActiveProfiles({"test"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ComponentBuildServiceTest {
     private String repositoryPath = null;
@@ -75,7 +77,8 @@ public class ComponentBuildServiceTest {
     private KubernetesRepository kubernetesRepository;
     @Autowired
     private CoreBuildProperties coreBuildProperties;
-
+    @Autowired
+    private ThreadPoolTaskScheduler taskScheduler;
     @BeforeAll
     public void setUp() throws Exception {
         mongoTemplate.remove(new Query(), Component.class);
@@ -91,11 +94,11 @@ public class ComponentBuildServiceTest {
                 () -> componentService.create(
                         NewComponentDTO
                                 .builder()
-                                .name("boost libraries")
-                                .description("boost libraries for c++ applications")
-                                .organization("boost")
+                                .name("component-a")
+                                .description("component-a description")
+                                .organization("organization-a")
                                 .url(repositoryPath)
-                                .buildOs(List.of(BuildOSDTO.RHEL7))
+                                .buildOs(List.of(BuildOSDTO.ROCKY9, BuildOSDTO.RHEL8))
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
@@ -104,7 +107,7 @@ public class ComponentBuildServiceTest {
         );
         var branchAddResult1 = assertDoesNotThrow(
                 () -> componentService.addNewBranch(
-                        "boost-libraries",
+                        "component-a",
                         BranchDTO
                                 .builder()
                                 .type("feature")
@@ -118,7 +121,7 @@ public class ComponentBuildServiceTest {
 
         var branchAddResult2 = assertDoesNotThrow(
                 () -> componentService.addNewBranch(
-                        "boost-libraries",
+                        "component-a",
                         BranchDTO
                                 .builder()
                                 .type("feature")
@@ -151,56 +154,89 @@ public class ComponentBuildServiceTest {
     public void cleanBuild() {
         mongoTemplate.remove(new Query(), ComponentBranchBuild.class);
         mongoTemplate.remove(new Query(), LogEntry.class);
+        // Reset the mock before each test
+        taskScheduler.initialize();
     }
 
     @Test
     public void testBuildComponent() throws Exception {
         // build component
-        String buildId = assertDoesNotThrow(
+        List<String> buildIds = assertDoesNotThrow(
                 () -> componentBuildService.startBuild(
                         component.name(),
                         "branch1"
                 )
         );
-        assertThat(buildId).isNotNull();
+        assertThat(buildIds).isNotNull();
 
         // wait for completion
         await().atMost(60, SECONDS).pollDelay(2, SECONDS).until(
                 () -> {
-                    ComponentBranchBuildDTO build = assertDoesNotThrow(
-                            () -> componentBuildService.findBuildById(buildId)
+                    List<Boolean> completionState = new ArrayList<>();
+                    // fetch each single build
+                    buildIds.forEach(
+                            buildId -> {
+                                ComponentBranchBuildDTO build = assertDoesNotThrow(
+                                        () -> componentBuildService.findBuildById(buildId)
+                                );
+                                assertThat(build).isNotNull();
+                                completionState.add(build.buildStatus() == BuildStatusDTO.SUCCESS || build.buildStatus() == BuildStatusDTO.FAILED);
+                            }
                     );
-                    return build.buildStatus() == BuildStatusDTO.SUCCESS;
+
+                    return completionState.stream().allMatch(s -> s);
                 }
         );
-        ComponentBranchBuildDTO fundBuild = assertDoesNotThrow(
-                () -> componentBuildService.findBuildById(buildId)
+
+        buildIds.forEach(
+                buildId -> {
+                    ComponentBranchBuildDTO fundBuild = assertDoesNotThrow(
+                            () -> componentBuildService.findBuildById(buildId)
+                    );
+                    assertThat(fundBuild).isNotNull();
+                    assertThat(fundBuild.buildStatus()).isEqualTo(BuildStatusDTO.SUCCESS);
+                }
         );
-        assertThat(fundBuild).isNotNull();
-        assertThat(fundBuild.buildStatus()).isEqualTo(BuildStatusDTO.SUCCESS);
+
 
         // fetch the log
-        List<LogEntryDTO> buildLog = assertDoesNotThrow(
-                () -> componentBuildService.findLogForBuild(buildId)
+        buildIds.forEach(
+                buildId -> {
+                    List<LogEntryDTO> buildLog = assertDoesNotThrow(
+                            () -> componentBuildService.findLogForBuild(buildId)
+                    );
+                    assertThat(buildLog).isNotEmpty();
+                }
         );
-        assertThat(buildLog).isNotEmpty();
 
-        // delete build
-        assertDoesNotThrow(
-                () -> componentBuildService.deleteBuild(buildId)
+        buildIds.forEach(
+                buildId -> {
+                    // delete build
+                    assertDoesNotThrow(
+                            () -> componentBuildService.deleteBuild(buildId)
+                    );
+                }
         );
 
-        // check for resource has been deleted
-        BuildNotFound buildNotFoundException = assertThrows(
-                BuildNotFound.class,
-                () -> componentBuildService.findBuildById(buildId)
+        buildIds.forEach(
+                buildId -> {
+                    // check for resource has been deleted
+                    BuildNotFound buildNotFoundException = assertThrows(
+                            BuildNotFound.class,
+                            () -> componentBuildService.findBuildById(buildId)
+                    );
+                    assertThat(buildNotFoundException).isNotNull();
+                }
         );
-        assertThat(buildNotFoundException).isNotNull();
 
-        // check that no more are present
-        List<LogEntryDTO> buildLogEmpty = assertDoesNotThrow(
-                () -> componentBuildService.findLogForBuild(buildId)
+        buildIds.forEach(
+                buildId -> {
+                    // check that no more are present
+                    List<LogEntryDTO> buildLogEmpty = assertDoesNotThrow(
+                            () -> componentBuildService.findLogForBuild(buildId)
+                    );
+                    assertThat(buildLogEmpty).isEmpty();
+                }
         );
-        assertThat(buildLogEmpty).isEmpty();
     }
 }

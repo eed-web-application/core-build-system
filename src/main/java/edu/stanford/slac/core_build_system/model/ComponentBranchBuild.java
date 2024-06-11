@@ -39,6 +39,16 @@ public class ComponentBranchBuild {
     private BuildInfo buildInfo;
 
     /**
+     * The identifier of the build image that is used to perform this build
+     */
+    private BuildOS buildOs;
+
+    /**
+     * The URL of the image that is used to perform this build
+     */
+    private String buildImageUrl;
+
+    /**
      * The status of the build
      */
     @Builder.Default

@@ -69,7 +69,6 @@ public class KubernetesRepositoryTest {
                         .dockerImage("busybox")
                         .builderName("test-builder")
                         .mountLocation("/mnt")
-                        .buildLocation("/mnt")
                         .build()
                 )
         );

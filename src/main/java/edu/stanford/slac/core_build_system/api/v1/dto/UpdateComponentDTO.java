@@ -33,6 +33,8 @@ public record UpdateComponentDTO(
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
         Set<ComponentDependencyDTO> dependOn,
         @Schema(description = "The list of os that the component need to be build on")
-        @Valid List<BuildOSDTO> buildOs
+        @Valid List<BuildOSDTO> buildOs,
+        @Schema(description = "The instruction for build the component")
+        String buildInstructions
 ) {
 }

@@ -2,10 +2,14 @@ package edu.stanford.slac.core_build_system.utility;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoFilepatternException;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.springframework.core.io.ClassPathResource;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 
 public class GitServer {
@@ -27,11 +31,10 @@ public class GitServer {
         Git git = Git.init().setDirectory(tempDir).setInitialBranch("main").call();
 
         // Add a file to the repository
-        File myFile = new File(tempDir, "testfile.txt");
-        if (!myFile.createNewFile()) {
-            throw new IOException("Could not create file " + myFile);
-        }
-        git.add().addFilepattern("testfile.txt").call();
+        Path sourcePath = Paths.get(new ClassPathResource("test-project").getURI());
+        // copy test project and add to git
+        copy(git, sourcePath, tempDir.toPath());
+        git.add().addFilepattern(".").call();
         git.commit().setMessage("Initial commit").call();
         createBranch(git, "branch1");
         createBranch(git, "branch2");
@@ -74,4 +77,27 @@ public class GitServer {
         directory.delete();
     }
 
+
+    static private void copy(Git git, Path source, Path target) throws IOException {
+        Files.walkFileTree(source, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                Path targetDir = target.resolve(source.relativize(dir));
+                try {
+                    Files.copy(dir, targetDir);
+                } catch (FileAlreadyExistsException e) {
+                    if (!Files.isDirectory(targetDir))
+                        throw e;
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Path targetPath = target.resolve(source.relativize(file));
+                Files.copy(file, targetPath);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
 }

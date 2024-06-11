@@ -33,12 +33,14 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.common.collect.ImmutableList.of;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.IN_PROGRESS;
 import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.PENDING;
@@ -46,7 +48,6 @@ import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.PEND
 @Log4j2
 @Component
 @RequiredArgsConstructor
-@Profile("async-build-processing")
 public class ProcessBuildTask {
     private final ComponentMapper componentMapper;
     private final CoreBuildProperties coreBuildProperties;
@@ -89,7 +90,7 @@ public class ProcessBuildTask {
             switch (buildStatus) {
                 case PENDING:
                     log.info("[{}] Build is pending", uniqueBuildIdentification);
-                    BuildInfo buildInfo = spinPodForBuild(component, buildToProcess.branchName());
+                    BuildInfo buildInfo = spinPodForBuild(component, buildToProcess);
                     componentBuildService.updateBuildInfo(buildToProcess.id(), buildInfo);
                     // spin-up the pod
                     newStatus = IN_PROGRESS;
@@ -185,16 +186,16 @@ public class ProcessBuildTask {
      * @return The timestamp
      */
     private LocalDateTime extractTimestamp(String logLine) throws ParseException {
-        Pattern pattern = Pattern.compile("^\\[(.*?)\\]");
-        Matcher matcher = pattern.matcher(logLine);
-        if (matcher.find()) {
-            String timestampStr = matcher.group(1);
-            // Adjust the date format to match your log's timestamp format
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            return LocalDateTime.parse(timestampStr, formatter);
-        } else {
+//        Pattern pattern = Pattern.compile("^\\[(.*?)\\]");
+//        Matcher matcher = pattern.matcher(logLine);
+//        if (matcher.find()) {
+//            String timestampStr = matcher.group(1);
+//            // Adjust the date format to match your log's timestamp format
+//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+//            return LocalDateTime.parse(timestampStr, formatter);
+//        } else {
             return LocalDateTime.now();
-        }
+//        }
     }
 
     /**
@@ -210,30 +211,42 @@ public class ProcessBuildTask {
      * Spin up a pod for the build
      *
      * @param comp       The component to build
-     * @param branchName The name of the branch
+     * @param branchName The name of the branchl
      * @return The name of the pod
      */
-    public BuildInfo spinPodForBuild(ComponentDTO comp, String branchName) throws Exception {
+    public BuildInfo spinPodForBuild(ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO) throws Exception {
         // ensure scratch directory nd download  the source code
         // it return the relative path from root scratch directory setting
-        String scratchLocation = downloadRepository(comp, branchName);
+        String scratchLocation = downloadRepository(comp, componentBranchBuildDTO);
 
         // we have branch
         Pod newlyCretedPod = wrapCatch(
                 () -> kubernetesRepository.spinUpBuildPod(
                         K8SPodBuilder.builder()
                                 .namespace(coreBuildProperties.getK8sBuildNamespace())
-                                .dockerImage("busybox")
+                                .dockerImage(componentBranchBuildDTO.buildImageUrl())
+                                .buildCommand(of("sh", "-c"))
+                                .buildArgs(of("printenv; ls -la $ADBS_SOURCE;python3 /build/start_build.py"))
                                 .builderName
                                         (
-                                                "%s-%s-%s".formatted(
+                                                "%s-%s-%s-%s".formatted(
                                                         UUID.randomUUID().toString().substring(0, 8),
                                                         comp.name(),
-                                                        branchName)
+                                                        componentBranchBuildDTO.buildOs(),
+                                                        componentBranchBuildDTO.branchName())
 
                                         )
                                 .mountLocation("/mnt")
-                                .buildLocation("/mnt/%s".formatted(scratchLocation))
+                                .envVars(
+                                        Map.of(
+                                                "ADBS_COMPONENT", comp.name(),
+                                                "ADBS_BRANCH", componentBranchBuildDTO.branchName(),
+                                                "ADBS_LINUX_USER", "",
+                                                "ADBS_GH_USER", "",
+                                                "ADBS_SOURCE", "/mnt/%s".formatted(scratchLocation),
+                                                "ADBS_BUILD_COMMAND", (comp.buildInstructions()==null?"":comp.buildInstructions())
+                                        )
+                                )
                                 .build()
                 ),
                 -5
@@ -251,28 +264,29 @@ public class ProcessBuildTask {
      * @param branchName The branch name
      * @throws Exception if there is an error
      */
-    private String downloadRepository(ComponentDTO comp, String branchName) throws Exception {
-        log.info("[Scratch creation for {}/{}] Composing scratch directory", comp.name(), branchName);
+    private String downloadRepository(ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO) throws Exception {
+        log.info("[Scratch creation for {}/{}] Composing scratch directory", comp.name(), componentBranchBuildDTO.branchName());
         String scratchFSDirectory = coreBuildProperties.getBuildFsRootDirectory();
-        String scratchBuildFolder = "%s/%s-%s-%s".formatted(
+        String scratchBuildFolder = "%s/%s-%s-%s-%s".formatted(
                 coreBuildProperties.getBuildScratchRootDirectory(),
                 UUID.randomUUID().toString().substring(0, 8),
+                componentBranchBuildDTO.buildOs(),
                 comp.name(),
-                branchName);
+                componentBranchBuildDTO.branchName());
         String uniqueBuildDirectory = "%s/%s".formatted(
                 scratchFSDirectory,
                 scratchBuildFolder);
         Path path = Paths.get(uniqueBuildDirectory);
-        log.info("[Scratch creation for {}/{}] Using {} directory to build component", comp.name(), branchName, uniqueBuildDirectory);
+        log.info("[Scratch creation for {}/{}] Using {} directory to build component", comp.name(), componentBranchBuildDTO.branchName(), uniqueBuildDirectory);
         if (Files.notExists(path)) {
             log.info("Creating directory: {}", path);
             Files.createDirectories(path);
         } else {
-            log.info("[Scratch creation for {}/{}] Directory already exists, content will be deleted: {}", comp.name(), branchName, path);
+            log.info("[Scratch creation for {}/{}] Directory already exists, content will be deleted: {}", comp.name(), componentBranchBuildDTO.branchName(), path);
             deleteDirectoryContents(path);
         }
-        log.info("[Scratch creation for {}/{}] Downloading repository for component into {}", comp.name(), branchName, path);
-        gitServerRepository.downLoadRepository(componentMapper.toModel(comp), branchName, path.toString());
+        log.info("[Scratch creation for {}/{}] Downloading repository for component into {}", comp.name(), componentBranchBuildDTO.branchName(), path);
+        gitServerRepository.downLoadRepository(componentMapper.toModel(comp), componentBranchBuildDTO.branchName(), path.toString());
         return scratchBuildFolder;
     }
 

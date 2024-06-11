@@ -1,25 +1,29 @@
-package edu.stanford.slac.core_build_system.config;
+package edu.stanford.slac.core_build_system.configuration;
 
-
-import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
-@Log4j2
+import java.time.Clock;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@Profile("test")
 @Configuration
 @EnableScheduling
-@Profile("!test")
-public class ThreadPoolConfig {
+public class ThreadPoolTestConfig {
     @Bean
+    @Primary
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
         taskScheduler.setPoolSize(10);  // Set the pool size to the desired number of concurrent threads
         taskScheduler.setThreadNamePrefix("processing-task-");
         taskScheduler.setWaitForTasksToCompleteOnShutdown(true);  // Wait for tasks to complete on shutdown
-        taskScheduler.setAwaitTerminationSeconds(30);  // Maximum wait time in seconds
+        taskScheduler.setAwaitTerminationSeconds(30);
         return taskScheduler;
     }
 }

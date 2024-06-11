@@ -116,7 +116,7 @@ public class ComponentBranchBuildRepositoryTest {
     }
 
     @Test
-    public void testCOmpletedBuildAreNotFetchedAnymoreCase1() {
+    public void testCompletedBuildAreNotFetchedAnymoreCase1() {
         assertDoesNotThrow(
                 () -> componentBranchBuildRepository.save(
                         ComponentBranchBuild
