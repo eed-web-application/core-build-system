@@ -30,6 +30,8 @@ public record NewComponentDTO(
         @NotEmpty String testingCriteria,
         @Valid Set<String> approvalIdentity,
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
-        @Valid Set<ComponentDependencyDTO> dependOn
+        @Valid Set<ComponentDependencyDTO> dependOn,
+        @Schema(description = "The list of os that the component need to be build on")
+        @Valid List<BuildOSDTO> buildOs
 ) {
 }

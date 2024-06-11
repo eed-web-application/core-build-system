@@ -3,9 +3,12 @@ package edu.stanford.slac.core_build_system.task;
 import edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.ComponentBranchBuildDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentMapper;
 import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
+import edu.stanford.slac.core_build_system.model.BuildInfo;
 import edu.stanford.slac.core_build_system.model.K8SPodBuilder;
 import edu.stanford.slac.core_build_system.model.LogEntry;
+import edu.stanford.slac.core_build_system.repository.GitServerRepository;
 import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
 import edu.stanford.slac.core_build_system.repository.LogEntryRepository;
 import edu.stanford.slac.core_build_system.service.ComponentBuildService;
@@ -23,6 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,11 +48,13 @@ import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.PEND
 @RequiredArgsConstructor
 @Profile("async-build-processing")
 public class ProcessBuildTask {
+    private final ComponentMapper componentMapper;
     private final CoreBuildProperties coreBuildProperties;
     private final KubernetesRepository kubernetesRepository;
     private final ComponentService componentService;
     private final ComponentBuildService componentBuildService;
     private final LogEntryRepository logEntryRepository;
+    private final GitServerRepository gitServerRepository;
     private final Stack<Pod> loggingPod = new Stack<>();
 
 
@@ -80,8 +89,8 @@ public class ProcessBuildTask {
             switch (buildStatus) {
                 case PENDING:
                     log.info("[{}] Build is pending", uniqueBuildIdentification);
-                    String newBuilderName = spinPodForBuild(component, buildToProcess.branchName());
-                    componentBuildService.updateBuilderName(buildToProcess.id(), newBuilderName);
+                    BuildInfo buildInfo = spinPodForBuild(component, buildToProcess.branchName());
+                    componentBuildService.updateBuildInfo(buildToProcess.id(), buildInfo);
                     // spin-up the pod
                     newStatus = IN_PROGRESS;
                     break;
@@ -136,7 +145,7 @@ public class ProcessBuildTask {
     private BuildStatusDTO getPodStatus(ComponentBranchBuildDTO buildToProcess) {
         PodResource foundPod = kubernetesRepository.getPod(
                 coreBuildProperties.getK8sBuildNamespace(),
-                buildToProcess.builderName()
+                buildToProcess.buildInfo().builderName()
         );
         boolean terminated = foundPod.get().getStatus().getContainerStatuses().size() == 1 &&
                 !foundPod.get().getStatus().getContainerStatuses().isEmpty() &&
@@ -154,7 +163,7 @@ public class ProcessBuildTask {
         log.info("Storing log for build {}", buildToProcess);
         PodResource foundPod = kubernetesRepository.getPod(
                 coreBuildProperties.getK8sBuildNamespace(),
-                buildToProcess.builderName()
+                buildToProcess.buildInfo().builderName()
         );
 
         try (LogWatch logWatch = foundPod.watchLog()) {
@@ -204,7 +213,11 @@ public class ProcessBuildTask {
      * @param branchName The name of the branch
      * @return The name of the pod
      */
-    public String spinPodForBuild(ComponentDTO comp, String branchName) {
+    public BuildInfo spinPodForBuild(ComponentDTO comp, String branchName) throws Exception {
+        // ensure scratch directory nd download  the source code
+        // it return the relative path from root scratch directory setting
+        String scratchLocation = downloadRepository(comp, branchName);
+
         // we have branch
         Pod newlyCretedPod = wrapCatch(
                 () -> kubernetesRepository.spinUpBuildPod(
@@ -220,11 +233,64 @@ public class ProcessBuildTask {
 
                                         )
                                 .mountLocation("/mnt")
-                                .buildLocation("/mnt")
+                                .buildLocation("/mnt/%s".formatted(scratchLocation))
                                 .build()
                 ),
                 -5
         );
-        return newlyCretedPod.getMetadata().getName();
+        return BuildInfo.builder()
+                .builderName(newlyCretedPod.getMetadata().getName())
+                .scratchLocation(scratchLocation)
+                .build();
+    }
+
+    /**
+     * Download the repository, using the real fs path
+     *
+     * @param comp       The component
+     * @param branchName The branch name
+     * @throws Exception if there is an error
+     */
+    private String downloadRepository(ComponentDTO comp, String branchName) throws Exception {
+        log.info("[Scratch creation for {}/{}] Composing scratch directory", comp.name(), branchName);
+        String scratchFSDirectory = coreBuildProperties.getBuildFsRootDirectory();
+        String scratchBuildFolder = "%s/%s-%s-%s".formatted(
+                coreBuildProperties.getBuildScratchRootDirectory(),
+                UUID.randomUUID().toString().substring(0, 8),
+                comp.name(),
+                branchName);
+        String uniqueBuildDirectory = "%s/%s".formatted(
+                scratchFSDirectory,
+                scratchBuildFolder);
+        Path path = Paths.get(uniqueBuildDirectory);
+        log.info("[Scratch creation for {}/{}] Using {} directory to build component", comp.name(), branchName, uniqueBuildDirectory);
+        if (Files.notExists(path)) {
+            log.info("Creating directory: {}", path);
+            Files.createDirectories(path);
+        } else {
+            log.info("[Scratch creation for {}/{}] Directory already exists, content will be deleted: {}", comp.name(), branchName, path);
+            deleteDirectoryContents(path);
+        }
+        log.info("[Scratch creation for {}/{}] Downloading repository for component into {}", comp.name(), branchName, path);
+        gitServerRepository.downLoadRepository(componentMapper.toModel(comp), branchName, path.toString());
+        return scratchBuildFolder;
+    }
+
+    /**
+     * Delete the contents of a directory
+     *
+     * @param path The path to the directory
+     * @throws IOException if there is an error
+     */
+    private static void deleteDirectoryContents(Path path) throws IOException {
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(path)) {
+            for (Path entry : directoryStream) {
+                if (Files.isDirectory(entry)) {
+                    deleteDirectoryContents(entry);
+                } else {
+                    Files.delete(entry);
+                }
+            }
+        }
     }
 }

@@ -26,6 +26,7 @@ public abstract class ComponentMapper {
     @Mapping(target = "dependOn", expression = "java(nameToId(newComponentDTO.dependOn()))")
 //    @Mapping(target = "versions", ignore = true)
     abstract public Component toModel(NewComponentDTO newComponentDTO);
+    abstract public Component toModel(ComponentDTO componentDTO);
     abstract public ComponentDTO toDTO(Component component);
     abstract public ComponentSummaryDTO toSummaryDTO(Component component);
     @Mapping(target = "name", qualifiedByName = "sanitize-name")

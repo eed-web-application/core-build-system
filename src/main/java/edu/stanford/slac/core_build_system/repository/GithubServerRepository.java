@@ -62,7 +62,6 @@ public class GithubServerRepository implements GitServerRepository {
         GHRepository repo = ghInstancer.ghOrganization().getRepository(component.getName());
         String parentRef = repo.getRef("heads/%s".formatted(newBranch.getBaseBranch())).getObject().getSha();
         GHRef draftBranch = repo.createRef("refs/heads/%s".formatted(newBranch.getBranchName()), parentRef);
-
         Map<String, GHBranch> branches = repo.getBranches();
         log.info("Branches: {}", branches);
     }

@@ -2,6 +2,7 @@ package edu.stanford.slac.core_build_system.repository;
 
 import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.model.K8SPodBuilder;
+import edu.stanford.slac.core_build_system.utility.KubernetesInit;
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -55,30 +56,7 @@ public class KubernetesRepositoryTest {
         var resultNamespace = assertDoesNotThrow(() -> repository.existsNamespace(buildNamespace));
         assertThat(resultNamespace).isTrue();
         // ensure persistent volume and claim
-        ClassPathResource cpResourcePV = new ClassPathResource("persistent-volume.yaml");
-        ClassPathResource cpResourcePVC = new ClassPathResource("persistent-volume-claim.yaml");
-        try (InputStream inputStream = new FileInputStream(cpResourcePV.getFile())) {
-            PersistentVolume pv = Serialization.unmarshal(inputStream, PersistentVolume.class);
-            var result = client.resource(pv).create();
-        } catch (KubernetesClientException e) {
-            if (e.getStatus().getReason().compareToIgnoreCase("AlreadyExists") != 0) {
-                e.printStackTrace();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        try (InputStream inputStream = new FileInputStream(cpResourcePVC.getFile())) {
-            PersistentVolumeClaim pvc = Serialization.unmarshal(inputStream, PersistentVolumeClaim.class);
-            pvc.getMetadata().setNamespace(buildNamespace);
-            var result = client.resource(pvc).create();
-            System.out.println("PV created: " + result.getMetadata().getName());
-        } catch (KubernetesClientException e) {
-            if (e.getStatus().getReason().compareToIgnoreCase("AlreadyExists") != 0) {
-                e.printStackTrace();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        KubernetesInit.init(repository, buildNamespace);
     }
 
 

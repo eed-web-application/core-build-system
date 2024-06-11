@@ -36,7 +36,7 @@ public class ComponentBranchBuild {
     /**
      * The name of the pod builder that is used to perform this build
      */
-    private String builderName;
+    private BuildInfo buildInfo;
 
     /**
      * The status of the build

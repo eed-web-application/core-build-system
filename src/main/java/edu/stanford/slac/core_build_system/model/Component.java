@@ -35,6 +35,8 @@ public class Component {
     @Builder.Default
     private Set<ComponentDependency> dependOn = new java.util.HashSet<>();
     @Builder.Default
+    private Set<BuildOS> buildOs = new java.util.HashSet<>();
+    @Builder.Default
     private String componentToken = UUID.randomUUID().toString();
     /**
      * The date and time when the activity was created.

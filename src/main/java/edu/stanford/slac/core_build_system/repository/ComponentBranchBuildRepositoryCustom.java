@@ -1,5 +1,6 @@
 package edu.stanford.slac.core_build_system.repository;
 
+import edu.stanford.slac.core_build_system.model.BuildInfo;
 import edu.stanford.slac.core_build_system.model.BuildStatus;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 
@@ -12,10 +13,10 @@ public interface ComponentBranchBuildRepositoryCustom {
     /**
      * Update the status of the build
      * @param id The identifier of the document
-     * @param status The new status of the build
+     * @param buildInfo The new status of the build
      * @return True if the status was updated, false otherwise
      */
-    boolean updateBuilderName(String id, String builderName);
+    boolean updateBuildInfo(String id, BuildInfo buildInfo);
 
     /**
      * Find and lock the next document that is not locked or the lock has expired

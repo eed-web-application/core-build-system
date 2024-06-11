@@ -7,10 +7,9 @@ import edu.stanford.slac.core_build_system.api.v1.dto.LogEntryDTO;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentBranchBuildMapper;
 import edu.stanford.slac.core_build_system.api.v1.mapper.LogEntryMapper;
 import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
-import edu.stanford.slac.core_build_system.exception.BranchNotFound;
-import edu.stanford.slac.core_build_system.exception.BuildNotFound;
-import edu.stanford.slac.core_build_system.exception.ComponentNotFoundByName;
+import edu.stanford.slac.core_build_system.exception.*;
 import edu.stanford.slac.core_build_system.model.Branch;
+import edu.stanford.slac.core_build_system.model.BuildInfo;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 import edu.stanford.slac.core_build_system.repository.*;
@@ -63,15 +62,26 @@ public class ComponentBuildService {
         );
         // check that the component has a repository URL
         assertion(
-                ControllerLogicException.builder().build(),
+                RepositoryNotFound.byName()
+                        .errorCode(-2)
+                        .name(componentName)
+                        .build(),
                 () -> comp.getUrl() != null && !comp.getUrl().isBlank()
+        );
+        // check the build os list
+        assertion(
+                BuildOSMissing.byName()
+                        .errorCode(-3)
+                        .name(componentName)
+                        .build(),
+                () -> comp.getBuildOs() != null && !comp.getBuildOs().isEmpty()
         );
         // check if branch is present
         Branch branch = comp.getBranches().stream().filter(b -> b.getBranchName().compareToIgnoreCase(branchName) == 0)
                 .findAny()
                 .orElseThrow(
                         () -> BranchNotFound.byName()
-                                .errorCode(-3)
+                                .errorCode(-4)
                                 .branchName(branchName)
                                 .build()
                 );
@@ -129,7 +139,7 @@ public class ComponentBuildService {
                 () -> retry(() -> {
                     kubernetesRepository.deletePod(
                             coreBuildProperties.getK8sBuildNamespace(),
-                            cbb.getBuilderName()
+                            cbb.getBuildInfo().getBuilderName()
                     );
                     return null;
                 }, 3), // Retry up to 3 times
@@ -144,12 +154,12 @@ public class ComponentBuildService {
      * @param builderName The new name of the builder
      * @return true if the update was successful
      */
-    public boolean updateBuilderName(String id, String builderName) {
+    public boolean updateBuildInfo(String id, BuildInfo buildInfo) {
         // update the builder name
         return wrapCatch(
-                () -> componentBranchBuildRepository.updateBuilderName(
+                () -> componentBranchBuildRepository.updateBuildInfo(
                         id,
-                        builderName
+                        buildInfo
                 ),
                 -1
         );

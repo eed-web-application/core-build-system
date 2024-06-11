@@ -7,13 +7,17 @@ import edu.stanford.slac.core_build_system.exception.BuildNotFound;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 import edu.stanford.slac.core_build_system.model.LogEntry;
+import edu.stanford.slac.core_build_system.repository.GithubServerRepository;
 import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
 import edu.stanford.slac.core_build_system.utility.GitServer;
+import edu.stanford.slac.core_build_system.utility.KubernetesInit;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
+import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,6 +36,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @AutoConfigureMockMvc
@@ -43,6 +48,8 @@ import static org.mockito.Mockito.when;
 public class ComponentBuildServiceTest {
     private String repositoryPath = null;
     private ComponentDTO component = null;
+    @MockBean
+    private GHRepository ghRepository;
     @MockBean
     private GitHub gitHub;
 
@@ -60,7 +67,8 @@ public class ComponentBuildServiceTest {
 
     @Autowired
     private ComponentBuildService componentBuildService;
-
+    @InjectMocks
+    private GithubServerRepository githubServerRepository;
     @Autowired
     MongoTemplate mongoTemplate;
     @Autowired
@@ -71,13 +79,13 @@ public class ComponentBuildServiceTest {
     @BeforeAll
     public void setUp() throws Exception {
         mongoTemplate.remove(new Query(), Component.class);
-
         when(ghInstancer.getClient()).thenReturn(gitHub);
         when(ghInstancer.ghOrganization()).thenReturn(ghOrganization);
         when(ghInstancer.gitCredentialsProvider()).thenReturn(credentialsProvider);
-
+        when(ghOrganization.getRepository(any())).thenReturn(ghRepository);
         // setup repository
         repositoryPath = GitServer.setupServer(List.of("branch1", "branch2"));
+        when(ghRepository.getHttpTransportUrl()).thenReturn(repositoryPath);
         // create component
         var componentId = assertDoesNotThrow(
                 () -> componentService.create(
@@ -87,6 +95,7 @@ public class ComponentBuildServiceTest {
                                 .description("boost libraries for c++ applications")
                                 .organization("boost")
                                 .url(repositoryPath)
+                                .buildOs(List.of(BuildOSDTO.RHEL7))
                                 .approvalRule("rule1")
                                 .testingCriteria("criteria1")
                                 .approvalIdentity(Set.of("user1@slac.stanford.edu"))
@@ -126,6 +135,11 @@ public class ComponentBuildServiceTest {
                 () -> componentService.findById(componentId)
         );
         assertThat(component).isNotNull();
+
+        assertDoesNotThrow(
+                ()->kubernetesRepository.ensureNamespace(coreBuildProperties.getK8sBuildNamespace())
+        );
+        KubernetesInit.init(kubernetesRepository, coreBuildProperties.getK8sBuildNamespace());
     }
 
     @AfterAll

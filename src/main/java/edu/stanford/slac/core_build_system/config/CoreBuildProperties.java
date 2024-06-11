@@ -16,7 +16,9 @@ public class CoreBuildProperties {
     private String githubAppPrivateKey;
     private long githubAppInstallationId;
 
-    private String buildRootScratchDirectory;
+    private String buildFsRootDirectory;
+    private String buildScratchRootDirectory;
+    private String buildPodMountPoint;
     private String artifactRootDirectory;
 
     private String k8sBuildNamespace;

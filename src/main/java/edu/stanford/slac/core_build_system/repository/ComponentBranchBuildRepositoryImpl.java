@@ -1,5 +1,6 @@
 package edu.stanford.slac.core_build_system.repository;
 import com.mongodb.client.result.UpdateResult;
+import edu.stanford.slac.core_build_system.model.BuildInfo;
 import edu.stanford.slac.core_build_system.model.BuildStatus;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,11 +24,11 @@ public class ComponentBranchBuildRepositoryImpl implements ComponentBranchBuildR
 
 
     @Override
-    public boolean updateBuilderName(String id, String builderName) {
+    public boolean updateBuildInfo(String id, BuildInfo buildInfo){
         Query query = new Query(
                 new Criteria("id").is(id)
         );
-        Update update = new Update().set("builderName", builderName);
+        Update update = new Update().set("buildInfo", buildInfo);
         return mongoTemplate.updateFirst(query, update, ComponentBranchBuild.class).getModifiedCount() > 0;
     }
 

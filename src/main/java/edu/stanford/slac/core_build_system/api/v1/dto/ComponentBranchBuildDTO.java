@@ -19,8 +19,8 @@ public record ComponentBranchBuildDTO(
         String componentId,
         @Schema(description = "The name of the branch that is used to perform this build")
         String branchName,
-        @Schema(description = "The name of the pod builder that is used to perform this build")
-        String builderName,
+        @Schema(description = "The information about current build on k8s pod")
+        BuildInfoDTO buildInfo,
         @Schema(description = "The status of the build")
         BuildStatusDTO buildStatus,
         @Schema(description = "The date and time when the build was started")

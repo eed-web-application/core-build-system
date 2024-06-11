@@ -95,4 +95,22 @@ public class KubernetesRepository {
         }
         return pod.delete();
     }
+
+    /**
+     * Create a new persistent volume
+     * @param pvResourceInputstream input stream of the persistent volume resource
+     */
+    public void createPersistenceVolume(InputStream pvResourceInputstream, String namespace){
+        PersistentVolume pv = Serialization.unmarshal(pvResourceInputstream, PersistentVolume.class);
+        pv.getMetadata().setNamespace(namespace);
+        var result = client.resource(pv).create();
+        log.info("PV created: {}", result.getMetadata().getName());
+    }
+
+    public void createPersistenceVolumeClaim(InputStream pvcResourceInputstream, String namespace){
+        PersistentVolumeClaim pvc = Serialization.unmarshal(pvcResourceInputstream, PersistentVolumeClaim.class);
+        pvc.getMetadata().setNamespace(namespace);
+        var result = client.resource(pvc).create();
+        log.info("PVC created: {}", result.getMetadata().getName());
+    }
 }

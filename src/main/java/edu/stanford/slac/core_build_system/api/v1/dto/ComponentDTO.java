@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.stanford.slac.core_build_system.model.Version;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 
@@ -33,6 +34,8 @@ public record ComponentDTO(
         Set<String> approvalIdentity,
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
         Set<ComponentDependencyDTO> dependOn,
+        @Schema(description = "The list of os that the component need to be build on")
+        List<BuildOSDTO> buildOs,
         @Schema(description = "The token for authorize action on the component")
         String componentToken,
         @Schema(description = "The list of versions of the component")

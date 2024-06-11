@@ -16,4 +16,6 @@ public interface GitServerRepository {
     void addBranch(Component component, NewBranch newBranch) throws Exception;
 
     void createNewPR(Component component, PullRequest pullRequest) throws Exception;
+
+    void downLoadRepository(Component component, String branchName, String clonePath) throws Exception;
 }

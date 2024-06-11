@@ -34,7 +34,11 @@ edu:
       core-build-system:
         github-app-id: ${CBS_GH_APP_ID}
         github-app-installation-id: ${CBS_GH_APP_INST_ID}
-        build-root-scratch-directory: ${CBS_BUILD_ROOT_SCRATCH_DIR:/tmp/cbs-build}
+        # this is the path where the scratch build is stored and that si mount within the path '/mnt' within the k8s pod
+        build-fs-root-directory: ${CBS_BUILD_FS_ROOT_DIR:/tmp/host-tmp}
+        build-scratch-root-directory: ${CBS_BUILD_SCRATCH_ROOT_DIR:cbs-build-root}
+        #/mnt/build this is will be the path where the build scratch direction from fs will bem mounted
+        build-pod-mount-point: ${CBS_BUILD_POD_MOUNT_POINT:/mnt/build}
         artifact-root-directory: ${CBS_ARTIFACT_ROOT_DIR:/tmp/cbs-artifact}
         k8s-build-namespace: ${CBS_K8S_BUILD_NAMESPACE:build-ns}
       ad:
