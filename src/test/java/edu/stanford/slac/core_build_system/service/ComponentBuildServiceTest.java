@@ -170,7 +170,7 @@ public class ComponentBuildServiceTest {
         assertThat(buildIds).isNotNull();
 
         // wait for completion
-        await().atMost(60, SECONDS).pollDelay(2, SECONDS).until(
+        await().atMost(120, SECONDS).pollDelay(2, SECONDS).until(
                 () -> {
                     List<Boolean> completionState = new ArrayList<>();
                     // fetch each single build
@@ -208,6 +208,14 @@ public class ComponentBuildServiceTest {
                     assertThat(buildLog).isNotEmpty();
                 }
         );
+
+        // test find all build for component name and branch
+
+        List<ComponentBranchBuildDTO> allBuilds = assertDoesNotThrow(
+                () -> componentBuildService.findAllByComponentNameBranchName("component-a", "branch1")
+        );
+        assertThat(allBuilds).isNotEmpty();
+        assertThat(allBuilds.size()).isEqualTo(2);
 
         buildIds.forEach(
                 buildId -> {

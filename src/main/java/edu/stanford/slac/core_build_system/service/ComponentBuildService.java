@@ -255,4 +255,24 @@ public class ComponentBuildService {
                 .map(logEntryMapper::toDTO)
                 .toList();
     }
+
+    /**
+     * Find all builds for a component
+     *
+     * @param componentName The name of the component
+     * @return The list of builds
+     */
+    public List<ComponentBranchBuildDTO> findAllByComponentNameBranchName(String componentName, String branchName) {
+        Component component = wrapCatch(
+                () -> componentRepository.findByName(componentName)
+                        .orElseThrow(
+                                () -> ComponentNotFoundByName.byName().name(componentName).errorCode(-1).build()
+                        ),
+                -1
+        );
+        return componentBranchBuildRepository.findByComponentIdAndBranchName(component.getId(), branchName)
+                .stream()
+                .map(componentBranchBuildMapper::toDTO)
+                .toList();
+    }
 }
