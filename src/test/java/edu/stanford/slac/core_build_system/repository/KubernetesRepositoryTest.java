@@ -27,6 +27,8 @@ import org.springframework.test.context.ActiveProfiles;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.UUID;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -67,7 +69,8 @@ public class KubernetesRepositoryTest {
                 K8SPodBuilder.builder()
                         .namespace(buildNamespace)
                         .dockerImage("busybox")
-                        .builderName("test-builder")
+                        .builderName("%s-test-builder".formatted(UUID.randomUUID().toString()))
+                        .buildCommand(List.of("echo", "Hello, World!"))
                         .mountLocation("/mnt")
                         .build()
                 )

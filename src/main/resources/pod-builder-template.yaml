@@ -6,7 +6,6 @@ spec:
   containers:
     - name: builder-container
       image: busybox
-      command: ["sh", "-c", "python3 /build/start_build.py"]
       volumeMounts:
         - mountPath: /mnt
           name: data-volume
