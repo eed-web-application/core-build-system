@@ -75,7 +75,11 @@ public class KubernetesRepositoryTest {
                         .build()
                 )
         );
-        await().atMost(30, SECONDS).pollDelay(2, SECONDS).until(
+        await()
+                .atMost(30, SECONDS)
+                .pollDelay(2, SECONDS)
+                .pollInterval(2, SECONDS)
+                .until(
                 () -> {
                     LOG.info(() -> "Checking if the pod has terminated");
                     var pod = assertDoesNotThrow(() -> repository.getPod(buildNamespace, newPod.getMetadata().getName()));

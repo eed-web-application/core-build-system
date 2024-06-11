@@ -102,8 +102,14 @@ public class ProcessBuildTask {
                                 coreBuildProperties.getK8sBuildNamespace(),
                                 buildToProcess.buildInfo().builderName()
                         );
-                        List<ContainerStatus> containerStatus = foundPod.get().getStatus().getContainerStatuses();
-                        String containerLog = foundPod.getLog();
+                        List<ContainerStatus> containerStatus = new ArrayList<>();
+                        String containerLog = "";
+                        try{
+                            containerStatus = foundPod.get().getStatus().getContainerStatuses();
+                            containerLog = foundPod.getLog();
+                        }catch (Exception e){
+                            log.error("{} Error getting container status or log: {}", uniqueBuildIdentification, e);
+                        }
                         log.info("{} Build is still in progress ->\n{}\n{}", uniqueBuildIdentification, containerStatus, containerLog);
                         return;
                     } else {
