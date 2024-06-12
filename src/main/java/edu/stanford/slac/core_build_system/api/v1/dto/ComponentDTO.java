@@ -3,12 +3,17 @@ package edu.stanford.slac.core_build_system.api.v1.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import edu.stanford.slac.core_build_system.model.Version;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Builder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -43,6 +48,20 @@ public record ComponentDTO(
         @Schema(description = "The list of versions of the component")
         List<VersionDTO> versions,
         @Schema(description = "The list of branches of the component")
-        List<BranchDTO> branches
-) {
+        List<BranchDTO> branches,
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @Schema(description = "The date and time when the activity was created")
+        LocalDateTime createdDate,
+        @Schema(description = "The user who created the activity")
+        String createdBy,
+        @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+        @JsonSerialize(using = LocalDateTimeSerializer.class)
+        @Schema(description = "The date and time when the activity was last modified")
+        LocalDateTime lastModifiedDate,
+        @Schema(description = "The user who last modified the activity")
+        String lastModifiedBy,
+        @Schema(description = "The version of the activity")
+        Long version
+        ) {
 }

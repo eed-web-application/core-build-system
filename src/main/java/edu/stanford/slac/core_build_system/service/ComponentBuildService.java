@@ -2,6 +2,7 @@ package edu.stanford.slac.core_build_system.service;
 
 import edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.ComponentBranchBuildDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.ComponentBranchBuildSummaryDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.LogEntryDTO;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentBranchBuildMapper;
 import edu.stanford.slac.core_build_system.api.v1.mapper.LogEntryMapper;
@@ -262,7 +263,7 @@ public class ComponentBuildService {
      * @param componentName The name of the component
      * @return The list of builds
      */
-    public List<ComponentBranchBuildDTO> findAllByComponentNameBranchName(String componentName, String branchName) {
+    public List<ComponentBranchBuildSummaryDTO> findAllByComponentNameBranchName(String componentName, String branchName) {
         Component component = wrapCatch(
                 () -> componentRepository.findByName(componentName)
                         .orElseThrow(
@@ -272,7 +273,7 @@ public class ComponentBuildService {
         );
         return componentBranchBuildRepository.findByComponentIdAndBranchName(component.getId(), branchName)
                 .stream()
-                .map(componentBranchBuildMapper::toDTO)
+                .map(componentBranchBuildMapper::toSummaryDTO)
                 .toList();
     }
 }

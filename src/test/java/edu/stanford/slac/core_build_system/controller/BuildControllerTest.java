@@ -1,5 +1,6 @@
-package edu.stanford.slac.core_build_system.service;
+package edu.stanford.slac.core_build_system.controller;
 
+import edu.stanford.slac.core_build_system.api.v1.controller.BuildController;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
@@ -9,6 +10,8 @@ import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 import edu.stanford.slac.core_build_system.model.LogEntry;
 import edu.stanford.slac.core_build_system.repository.GithubServerRepository;
 import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
+import edu.stanford.slac.core_build_system.service.ComponentBuildService;
+import edu.stanford.slac.core_build_system.service.ComponentService;
 import edu.stanford.slac.core_build_system.utility.GitServer;
 import edu.stanford.slac.core_build_system.utility.KubernetesInit;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -29,6 +32,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +53,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles({"test"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class ComponentBuildServiceTest {
+public class BuildControllerTest {
     private String repositoryPath = null;
     private ComponentDTO component = null;
+    @Autowired
+    private MockMvc mockMvc;
     @MockBean
     private GHRepository ghRepository;
     @MockBean
@@ -81,6 +87,11 @@ public class ComponentBuildServiceTest {
     private CoreBuildProperties coreBuildProperties;
     @Autowired
     private ThreadPoolTaskScheduler taskScheduler;
+    @Autowired
+    private TestControllerHelperService testControllerHelperService;
+    @Autowired
+    private BuildController buildController;
+
     @BeforeAll
     public void setUp() throws Exception {
         mongoTemplate.remove(new Query(), Component.class);
@@ -161,15 +172,20 @@ public class ComponentBuildServiceTest {
     }
 
     @Test
-    public void testBuildComponent() throws Exception {
+    public void testBuildComponentByController() {
         // build component
-        List<String> buildIds = assertDoesNotThrow(
-                () -> componentBuildService.startBuild(
+        var newBuildIdsResult = assertDoesNotThrow(
+                () -> testControllerHelperService.buildControllerStartNewBuild(
+                        mockMvc,
+                        status().isCreated(),
                         component.name(),
                         "branch1"
                 )
         );
-        assertThat(buildIds).isNotNull();
+        AssertionsForClassTypes.assertThat(newBuildIdsResult).isNotNull();
+        AssertionsForClassTypes.assertThat(newBuildIdsResult.getErrorCode()).isEqualTo(0);
+        assertThat(newBuildIdsResult.getPayload()).isNotEmpty();
+        AssertionsForClassTypes.assertThat(newBuildIdsResult.getPayload().size()).isEqualTo(2);
 
         // wait for completion
         await()
@@ -177,78 +193,112 @@ public class ComponentBuildServiceTest {
                 .pollDelay(2, SECONDS)
                 .pollInterval(2, SECONDS)
                 .until(
-                () -> {
-                    List<Boolean> completionState = new ArrayList<>();
-                    // fetch each single build
-                    buildIds.forEach(
-                            buildId -> {
-                                ComponentBranchBuildDTO build = assertDoesNotThrow(
-                                        () -> componentBuildService.findBuildById(buildId)
-                                );
-                                assertThat(build).isNotNull();
-                                completionState.add(build.buildStatus() == BuildStatusDTO.SUCCESS || build.buildStatus() == BuildStatusDTO.FAILED);
-                            }
-                    );
+                        () -> {
+                            List<Boolean> completionState = new ArrayList<>();
+                            // fetch each single build
+                            newBuildIdsResult.getPayload().forEach(
+                                    buildId -> {
+                                        var buildResult = assertDoesNotThrow(
+                                                () -> testControllerHelperService.buildControllerFindBuildById(
+                                                        mockMvc,
+                                                        status().isOk(),
+                                                        buildId
+                                                )
+                                        );
+                                        AssertionsForClassTypes.assertThat(buildResult).isNotNull();
+                                        AssertionsForClassTypes.assertThat(buildResult.getErrorCode()).isEqualTo(0);
+                                        completionState.add(buildResult.getPayload().buildStatus() == BuildStatusDTO.SUCCESS || buildResult.getPayload().buildStatus() == BuildStatusDTO.FAILED);
+                                    }
+                            );
+                            return completionState.stream().allMatch(s -> s);
+                        }
+                );
 
-                    return completionState.stream().allMatch(s -> s);
-                }
-        );
-
-        buildIds.forEach(
+        newBuildIdsResult.getPayload().forEach(
                 buildId -> {
-                    ComponentBranchBuildDTO fundBuild = assertDoesNotThrow(
-                            () -> componentBuildService.findBuildById(buildId)
+                    var fundBuildResult = assertDoesNotThrow(
+                            () -> testControllerHelperService.buildControllerFindBuildById(
+                                    mockMvc,
+                                    status().isOk(),
+                                    buildId
+                            )
                     );
-                    assertThat(fundBuild).isNotNull();
-                    assertThat(fundBuild.buildStatus()).isEqualTo(BuildStatusDTO.SUCCESS);
+                    AssertionsForClassTypes.assertThat(fundBuildResult).isNotNull();
+                    AssertionsForClassTypes.assertThat(fundBuildResult.getErrorCode()).isEqualTo(0);
+                    assertThat(fundBuildResult.getPayload().buildStatus()).isEqualTo(BuildStatusDTO.SUCCESS);
                 }
         );
 
 
         // fetch the log
-        buildIds.forEach(
+        newBuildIdsResult.getPayload().forEach(
                 buildId -> {
-                    List<LogEntryDTO> buildLog = assertDoesNotThrow(
-                            () -> componentBuildService.findLogForBuild(buildId)
+                    var buildLogResult = assertDoesNotThrow(
+                            () -> testControllerHelperService.buildControllerFindLogByBuildId(
+                                    mockMvc,
+                                    status().isOk(),
+                                    buildId
+                            )
                     );
-                    assertThat(buildLog).isNotEmpty();
+                    assertThat(buildLogResult.getPayload()).isNotEmpty();
                 }
         );
 
         // test find all build for component name and branch
-        List<ComponentBranchBuildSummaryDTO> allBuilds = assertDoesNotThrow(
-                () -> componentBuildService.findAllByComponentNameBranchName("component-a", "branch1")
-        );
-        assertThat(allBuilds).isNotEmpty();
-        assertThat(allBuilds.size()).isEqualTo(2);
 
-        buildIds.forEach(
+        var allBuildsResult = assertDoesNotThrow(
+                () -> testControllerHelperService.buildControllerFindByComponentNameAndBranch(
+                        mockMvc,
+                        status().isOk(),
+                        "component-a",
+                        "branch1"
+                )
+        );
+        AssertionsForClassTypes.assertThat(allBuildsResult).isNotNull();
+        AssertionsForClassTypes.assertThat(allBuildsResult.getErrorCode()).isEqualTo(0);
+        assertThat(allBuildsResult.getPayload()).isNotEmpty();
+        AssertionsForClassTypes.assertThat(allBuildsResult.getPayload().size()).isEqualTo(2);
+
+        newBuildIdsResult.getPayload().forEach(
                 buildId -> {
                     // delete build
                     assertDoesNotThrow(
-                            () -> componentBuildService.deleteBuild(buildId)
+                            () -> testControllerHelperService.buildControllerDeleteBuildById(
+                                    mockMvc,
+                                    status().isOk(),
+                                    buildId
+                            )
                     );
                 }
         );
 
-        buildIds.forEach(
+        newBuildIdsResult.getPayload().forEach(
                 buildId -> {
                     // check for resource has been deleted
                     BuildNotFound buildNotFoundException = assertThrows(
                             BuildNotFound.class,
-                            () -> componentBuildService.findBuildById(buildId)
+                            () -> testControllerHelperService.buildControllerFindBuildById(
+                                    mockMvc,
+                                    status().isNotFound(),
+                                    buildId
+                            )
                     );
                     assertThat(buildNotFoundException).isNotNull();
                 }
         );
 
-        buildIds.forEach(
+        newBuildIdsResult.getPayload().forEach(
                 buildId -> {
                     // check that no more are present
-                    List<LogEntryDTO> buildLogEmpty = assertDoesNotThrow(
-                            () -> componentBuildService.findLogForBuild(buildId)
+                    var buildLogEmptyResult = assertDoesNotThrow(
+                            () -> testControllerHelperService.buildControllerFindLogByBuildId(
+                                    mockMvc,
+                                    status().isOk(),
+                                    buildId
+                            )
                     );
-                    assertThat(buildLogEmpty).isEmpty();
+                    AssertionsForClassTypes.assertThat(buildLogEmptyResult).isNotNull();
+                    assertThat(buildLogEmptyResult.getPayload()).isEmpty();
                 }
         );
     }

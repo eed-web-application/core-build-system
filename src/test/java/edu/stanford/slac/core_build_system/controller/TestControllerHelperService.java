@@ -434,6 +434,99 @@ public class TestControllerHelperService {
         );
     }
 
+    /**
+     * Create a new build
+     */
+    public ApiResultResponse<List<String>> buildControllerStartNewBuild(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String componentName,
+            String branchName
+    ) throws Exception {
+        var requestBuilder = post("/v1/build/component/{componentName}/branch/{branchName}", componentName, branchName)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                Optional.empty(),
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<List<ComponentBranchBuildSummaryDTO>> buildControllerFindByComponentNameAndBranch(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String componentName,
+            String branchName
+    ) throws Exception {
+        var requestBuilder = get("/v1/build/component/{componentName}/branch/{branchName}", componentName, branchName)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                Optional.empty(),
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<ComponentBranchBuildDTO> buildControllerFindBuildById(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String buildId
+    ) throws Exception {
+        var requestBuilder = get("/v1/build/{buildId}", buildId)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                Optional.empty(),
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<Boolean> buildControllerDeleteBuildById(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String buildId
+    ) throws Exception {
+        var requestBuilder = delete("/v1/build/{buildId}", buildId)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                Optional.empty(),
+                requestBuilder
+        );
+    }
+
+    public ApiResultResponse<List<LogEntryDTO>> buildControllerFindLogByBuildId(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String buildId
+    ) throws Exception {
+        var requestBuilder = get("/v1/build/{buildId}/log", buildId)
+                .contentType(MediaType.APPLICATION_JSON);
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                Optional.empty(),
+                requestBuilder
+        );
+    }
+
+    /**
+     * Return all builds for a component/branch
+     */
     public <T> ApiResultResponse<T> executeHttpRequest(
             TypeReference<ApiResultResponse<T>> typeRef,
             MockMvc mockMvc,
