@@ -4,8 +4,6 @@ import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.NewBranch;
 import edu.stanford.slac.core_build_system.model.PullRequest;
 
-import java.io.IOException;
-
 public interface GitServerRepository {
     void createRepository(Component component) throws Exception;
 
@@ -17,5 +15,5 @@ public interface GitServerRepository {
 
     void createNewPR(Component component, PullRequest pullRequest) throws Exception;
 
-    void downLoadRepository(Component component, String branchName, String clonePath) throws Exception;
+    String downLoadRepository(Component component, String branchName, String clonePath) throws Exception;
 }

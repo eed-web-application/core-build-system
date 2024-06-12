@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.client.dsl.LogWatch;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,10 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.google.common.collect.ImmutableList.of;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
@@ -72,7 +68,7 @@ public class ProcessBuildTask {
     /**
      * Process the build
      *
-     * @param documentToProcess The document to process
+     * @param buildToProcess The build to process
      */
     @Transactional
     public void processBuild(ComponentBranchBuildDTO buildToProcess) {
@@ -81,22 +77,22 @@ public class ProcessBuildTask {
                 -2
         );
         BuildStatusDTO newStatus = PENDING;
-        String uniqueBuildIdentification = "[%s-%s-%s-%s]".formatted(buildToProcess.componentId(), component.name(), buildToProcess.branchName(), buildToProcess.buildOs());
-        log.info("{} Start processing", uniqueBuildIdentification);
-        try{
+        String logPrefix = "[%s-%s-%s-%s]".formatted(buildToProcess.componentId(), component.name(), buildToProcess.branchName(), buildToProcess.buildOs());
+        log.info("{} Start processing", logPrefix);
+        try {
             BuildStatusDTO buildStatus = buildToProcess.buildStatus();
             switch (buildStatus) {
                 case PENDING:
-                    log.info("{} Build is pending", uniqueBuildIdentification);
-                    BuildInfo buildInfo = spinPodForBuild(component, buildToProcess);
+                    log.info("{} Build is pending", logPrefix);
+                    BuildInfo buildInfo = spinPodForBuild(logPrefix, component, buildToProcess);
                     componentBuildService.updateBuildInfo(buildToProcess.id(), buildInfo);
                     // spin-up the pod
                     newStatus = IN_PROGRESS;
                     break;
                 case IN_PROGRESS:
-                    log.info("{} Build is in progress", uniqueBuildIdentification);
-                    BuildStatusDTO podStatus =  getPodStatus(buildToProcess);
-                    if(podStatus == IN_PROGRESS) {
+                    log.info("{} Build is in progress", logPrefix);
+                    BuildStatusDTO podStatus = getPodStatus(logPrefix, buildToProcess);
+                    if (podStatus == IN_PROGRESS) {
                         newStatus = IN_PROGRESS;
                         PodResource foundPod = kubernetesRepository.getPod(
                                 coreBuildProperties.getK8sBuildNamespace(),
@@ -104,44 +100,44 @@ public class ProcessBuildTask {
                         );
                         List<ContainerStatus> containerStatus = new ArrayList<>();
                         String containerLog = "";
-                        try{
+                        try {
                             containerStatus = foundPod.get().getStatus().getContainerStatuses();
                             containerLog = foundPod.getLog();
-                        }catch (Exception e){
-                            log.error("{} Error getting container status or log: {}", uniqueBuildIdentification, e);
+                        } catch (Exception e) {
+                            log.error("{} Error getting container status or log: {}", logPrefix, e);
                         }
-                        log.info("{} Build is still in progress ->\n{}\n{}", uniqueBuildIdentification, containerStatus, containerLog);
+                        log.info("{} Build is still in progress ->\n{}\n{}", logPrefix, containerStatus, containerLog);
                         return;
                     } else {
                         // store the log before switching the status
-                        storeLog(buildToProcess);
+                        storeLog(logPrefix, buildToProcess);
                         newStatus = podStatus;
                         if (podStatus == BuildStatusDTO.SUCCESS) {
-                            log.info("{} Build is completed", uniqueBuildIdentification);
+                            log.info("{} Build is completed", logPrefix);
                         } else {
-                            log.info("{} Build failed", uniqueBuildIdentification);
+                            log.info("{} Build failed", logPrefix);
                         }
                     }
                     break;
                 case SUCCESS:
-                    log.info("{} Already completed", uniqueBuildIdentification);
+                    log.info("{} Already completed", logPrefix);
                     break;
                 case FAILED:
-                    log.info("{} Build Already failed", uniqueBuildIdentification);
+                    log.info("{} Build Already failed", logPrefix);
                     break;
                 default:
-                    log.error("{} Unknown build status", uniqueBuildIdentification);
+                    log.error("{} Unknown build status", logPrefix);
                     break;
             }
-        }catch (Exception e) {
-            log.error("{} Error processing build", uniqueBuildIdentification, e);
+        } catch (Exception e) {
+            log.error("{} Error processing build", logPrefix, e);
         } finally {
             // release lock on build
             boolean lockReleased = componentBuildService.releaseLock(buildToProcess.id(), newStatus);
             if (lockReleased) {
-                log.info("{} Lock released", uniqueBuildIdentification);
+                log.info("{} Lock released", logPrefix);
             } else {
-                log.error("{} Lock not released", uniqueBuildIdentification);
+                log.error("{} Lock not released", logPrefix);
             }
         }
 
@@ -153,7 +149,8 @@ public class ProcessBuildTask {
      * @param buildToProcess The build to process
      * @return The status of the pod
      */
-    private BuildStatusDTO getPodStatus(ComponentBranchBuildDTO buildToProcess) {
+    private BuildStatusDTO getPodStatus(String logPrefix, ComponentBranchBuildDTO buildToProcess) {
+        log.info("{} Getting pod status", logPrefix);
         PodResource foundPod = kubernetesRepository.getPod(
                 coreBuildProperties.getK8sBuildNamespace(),
                 buildToProcess.buildInfo().builderName()
@@ -161,7 +158,7 @@ public class ProcessBuildTask {
         boolean terminated = foundPod.get().getStatus().getContainerStatuses().size() == 1 &&
                 !foundPod.get().getStatus().getContainerStatuses().isEmpty() &&
                 foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated() != null;
-        boolean success  =   terminated && foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated().getReason().compareToIgnoreCase("Completed") == 0;
+        boolean success = terminated && foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated().getReason().compareToIgnoreCase("Completed") == 0;
         return terminated && success ? BuildStatusDTO.SUCCESS : (terminated ? BuildStatusDTO.FAILED : IN_PROGRESS);
     }
 
@@ -171,7 +168,8 @@ public class ProcessBuildTask {
      * @param buildToProcess The build to process
      * @return The container status of the pod
      */
-    private List<ContainerStatus> getPodContainerStatus(ComponentBranchBuildDTO buildToProcess) {
+    private List<ContainerStatus> getPodContainerStatus(String logPrefix, ComponentBranchBuildDTO buildToProcess) {
+        log.info("{} Getting pod container status", logPrefix);
         PodResource foundPod = kubernetesRepository.getPod(
                 coreBuildProperties.getK8sBuildNamespace(),
                 buildToProcess.buildInfo().builderName()
@@ -184,8 +182,8 @@ public class ProcessBuildTask {
      *
      * @param buildToProcess The build to process
      */
-    private void storeLog(ComponentBranchBuildDTO buildToProcess) throws IOException, ParseException {
-        log.info("Storing log for build {}", buildToProcess);
+    private void storeLog(String logPrefix, ComponentBranchBuildDTO buildToProcess) throws IOException, ParseException {
+        log.info("{} Storing log for build {}", logPrefix, buildToProcess);
         PodResource foundPod = kubernetesRepository.getPod(
                 coreBuildProperties.getK8sBuildNamespace(),
                 buildToProcess.buildInfo().builderName()
@@ -218,7 +216,7 @@ public class ProcessBuildTask {
 //            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 //            return LocalDateTime.parse(timestampStr, formatter);
 //        } else {
-            return LocalDateTime.now();
+        return LocalDateTime.now();
 //        }
     }
 
@@ -231,18 +229,21 @@ public class ProcessBuildTask {
     private static String removeTimestamp(String logLine) {
         return logLine.replaceFirst("^\\[.*?\\]\\s*", "");
     }
+
     /**
      * Spin up a pod for the build
      *
-     * @param comp       The component to build
-     * @param branchName The name of the branchl
+     * @param comp                    The component to build
+     * @param componentBranchBuildDTO The branch to build
      * @return The name of the pod
      */
-    public BuildInfo spinPodForBuild(ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO) throws Exception {
+    public BuildInfo spinPodForBuild(String logPrefix, ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO) throws Exception {
+
         // ensure scratch directory nd download  the source code
         // it return the relative path from root scratch directory setting
-        String scratchLocation = downloadRepository(comp, componentBranchBuildDTO);
-
+        log.info("{} Downloaded spin-up pod", logPrefix);
+        String scratchLocation = downloadRepository(logPrefix, comp, componentBranchBuildDTO);
+        log.info("{} Spinning up pod for build", logPrefix);
         // we have branch
         Pod newlyCretedPod = wrapCatch(
                 () -> kubernetesRepository.spinUpBuildPod(
@@ -268,7 +269,7 @@ public class ProcessBuildTask {
                                                 "ADBS_LINUX_USER", "",
                                                 "ADBS_GH_USER", "",
                                                 "ADBS_SOURCE", "/mnt/%s".formatted(scratchLocation),
-                                                "ADBS_BUILD_COMMAND", (comp.buildInstructions()==null?"":comp.buildInstructions())
+                                                "ADBS_BUILD_COMMAND", (comp.buildInstructions() == null ? "" : comp.buildInstructions())
                                         )
                                 )
                                 .build()
@@ -284,12 +285,13 @@ public class ProcessBuildTask {
     /**
      * Download the repository, using the real fs path
      *
-     * @param comp       The component
-     * @param branchName The branch name
+     * @param logPrefix
+     * @param comp                    The component
+     * @param componentBranchBuildDTO The branch to build
      * @throws Exception if there is an error
      */
-    private String downloadRepository(ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO) throws Exception {
-        log.info("[Scratch creation for {}/{}] Composing scratch directory", comp.name(), componentBranchBuildDTO.branchName());
+    private String downloadRepository(String logPrefix, ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO) throws Exception {
+        log.info("{} Composing scratch directory", logPrefix);
         String scratchFSDirectory = coreBuildProperties.getBuildFsRootDirectory();
         String scratchBuildFolder = "%s/%s-%s-%s-%s".formatted(
                 coreBuildProperties.getBuildScratchRootDirectory(),
@@ -301,16 +303,17 @@ public class ProcessBuildTask {
                 scratchFSDirectory,
                 scratchBuildFolder);
         Path path = Paths.get(uniqueBuildDirectory);
-        log.info("[Scratch creation for {}/{}] Using {} directory to build component", comp.name(), componentBranchBuildDTO.branchName(), uniqueBuildDirectory);
+        log.info("{} Using '{}' directory to build component", logPrefix, uniqueBuildDirectory);
         if (Files.notExists(path)) {
-            log.info("Creating directory: {}", path);
+            log.info("{} Directory does not exist, creating: {}", logPrefix, path);
             Files.createDirectories(path);
         } else {
-            log.info("[Scratch creation for {}/{}] Directory already exists, content will be deleted: {}", comp.name(), componentBranchBuildDTO.branchName(), path);
+            log.info("{} Directory exists, deleting contents: {}", logPrefix, path);
             deleteDirectoryContents(path);
         }
-        log.info("[Scratch creation for {}/{}] Downloading repository for component into {}", comp.name(), componentBranchBuildDTO.branchName(), path);
-        gitServerRepository.downLoadRepository(componentMapper.toModel(comp), componentBranchBuildDTO.branchName(), path.toString());
+        log.info("{} Downloading repository", logPrefix);
+        String repositoryPath = gitServerRepository.downLoadRepository(componentMapper.toModel(comp), componentBranchBuildDTO.branchName(), path.toString());
+        log.info("{} Repository downloaded to {}", logPrefix, repositoryPath);
         return scratchBuildFolder;
     }
 

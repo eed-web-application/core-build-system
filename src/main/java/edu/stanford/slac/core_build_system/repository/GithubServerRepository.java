@@ -1,6 +1,5 @@
 package edu.stanford.slac.core_build_system.repository;
 
-import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.NewBranch;
@@ -81,19 +80,22 @@ public class GithubServerRepository implements GitServerRepository {
 
     /**
      * Download the repository
-     * @param component The component
+     *
+     * @param component  The component
      * @param branchName The branch name
-     * @param clonePath The path to clone the repository
+     * @param clonePath  The path to clone the repository
+     * @return The string representation of the repository
      * @throws Exception if there is an error
      */
-    public void downLoadRepository(Component component, String branchName, String clonePath) throws Exception {
+    public String downLoadRepository(Component component, String branchName, String clonePath) throws Exception {
         GHRepository repo = ghInstancer.ghOrganization().getRepository(component.getName());
-        Git git = Git.cloneRepository()
+        try (Git git = Git.cloneRepository()
                 .setURI(repo.getHttpTransportUrl())
                 .setBranch(branchName)
                 .setDirectory(new File(clonePath))
                 .setCredentialsProvider(ghInstancer.gitCredentialsProvider())
-                .call();
-        log.info("Repository cloned: {}", git.getRepository().getDirectory());
+                .call()) {
+            return git.toString();
+        }
     }
 }
