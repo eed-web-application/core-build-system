@@ -182,7 +182,7 @@ public class ProcessBuildTask {
      *
      * @param buildToProcess The build to process
      */
-    private void storeLog(String logPrefix, ComponentBranchBuildDTO buildToProcess) throws IOException, ParseException {
+    private void storeLog(String logPrefix, ComponentBranchBuildDTO buildToProcess) {
         log.info("{} Storing log for build {}", logPrefix, buildToProcess);
         PodResource foundPod = kubernetesRepository.getPod(
                 coreBuildProperties.getK8sBuildNamespace(),
@@ -196,8 +196,11 @@ public class ProcessBuildTask {
                 LocalDateTime timestamp = extractTimestamp(line);
                 String logLine = removeTimestamp(line);
                 LogEntry entry = LogEntry.builder().buildId(buildToProcess.id()).timestamp(timestamp).log(logLine).build();
+                log.debug("{} Storing log entry: {}", logPrefix, entry);
                 logEntryRepository.save(entry);
             }
+        } catch (IOException | ParseException e) {
+            log.error("{} Error storing log: {}", logPrefix, e);
         }
     }
 

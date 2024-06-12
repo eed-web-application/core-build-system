@@ -2,6 +2,7 @@ package edu.stanford.slac.core_build_system.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
@@ -9,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.FieldType;
 import java.time.LocalDateTime;
 
 @Builder
+@ToString
 @AllArgsConstructor
 public class LogEntry {
     @Id
