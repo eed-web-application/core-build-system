@@ -171,6 +171,11 @@ public class BuildControllerTest {
         taskScheduler.initialize();
     }
 
+    @AfterEach
+    public void cleanComponent() {
+        taskScheduler.shutdown();
+    }
+
     @Test
     public void testBuildComponentByController() {
         // build component
