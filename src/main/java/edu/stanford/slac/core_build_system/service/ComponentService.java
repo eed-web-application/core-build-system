@@ -66,7 +66,7 @@ public class ComponentService {
     /**
      * Find a component by its project url
      *
-     * @param projectUrl The project url
+     * @param projectUrls The project url
      * @return The details of the component
      */
     ComponentDTO findComponentByProjectUrl(List<String> projectUrls) {
