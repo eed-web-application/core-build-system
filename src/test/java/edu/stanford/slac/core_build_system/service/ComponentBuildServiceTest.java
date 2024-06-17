@@ -11,7 +11,6 @@ import edu.stanford.slac.core_build_system.repository.GithubServerRepository;
 import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
 import edu.stanford.slac.core_build_system.utility.GitServer;
 import edu.stanford.slac.core_build_system.utility.KubernetesInit;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 @SpringBootTest()
@@ -158,6 +156,11 @@ public class ComponentBuildServiceTest {
         mongoTemplate.remove(new Query(), LogEntry.class);
         // Reset the mock before each test
         taskScheduler.initialize();
+    }
+
+    @AfterEach
+    public void cleanComponent() {
+        taskScheduler.shutdown();
     }
 
     @Test
