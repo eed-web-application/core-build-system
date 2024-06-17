@@ -3,6 +3,7 @@ package edu.stanford.slac.core_build_system.config;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.SignatureAlgorithm;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -26,9 +27,10 @@ import java.util.Date;
 
 @Profile("!test")
 @Configuration
+@RequiredArgsConstructor
 public class GitHubClient {
     private CoreBuildProperties coreBuildProperties;
-    private long ttMsec = 600000;
+    private final long ttMsec = 600000;
 
     @Bean
     public GHInstancer ghInstancer() throws Exception {
