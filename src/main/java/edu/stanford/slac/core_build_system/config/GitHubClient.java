@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.SignatureAlgorithm;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -26,6 +27,7 @@ import java.util.Base64;
 import java.util.Date;
 
 @Profile("!test")
+@Log4j2
 @Configuration
 @RequiredArgsConstructor
 public class GitHubClient {
@@ -34,11 +36,21 @@ public class GitHubClient {
 
     @Bean
     public GHInstancer ghInstancer() throws Exception {
+        log.info(
+                "Creating GHInstancer client for app-id:{}",
+                coreBuildProperties.getGithubAppId(),
+                coreBuildProperties.getGithubAppInstallationId()
+        );
         return new GHInstancer(ghAppInstallation());
     }
 
     @Bean
     public GHAppInstallation ghAppInstallation() throws Exception {
+        log.info(
+                "Creating GHAppInstallation client for inst-id:{}",
+                coreBuildProperties.getGithubAppId(),
+                coreBuildProperties.getGithubAppInstallationId()
+        );
         var gh = new GitHubBuilder().withJwtToken(createJWT()).build();
         return gh.getApp().getInstallationById(coreBuildProperties.getGithubAppInstallationId());
     }
@@ -97,9 +109,12 @@ public class GitHubClient {
          */
         public GitHub getClient() throws Exception {
             if (gitHub == null || Instant.now().isAfter(tokenExpirationTime.minusSeconds(300))) {
+                log.debug("Creating GitHub client for installation:{}", ghAppInstallation.getAccount().getLogin();
                 GHAppInstallationToken token = ghAppInstallation.createToken().create();
                 gitHub = new GitHubBuilder().withAppInstallationToken(token.getToken()).build();
                 tokenExpirationTime = token.getExpiresAt().toInstant();
+            } else {
+                log.debug("Reusing GitHub client for installation:{}", ghAppInstallation.getAccount().getLogin();
             }
             return gitHub;
         }
