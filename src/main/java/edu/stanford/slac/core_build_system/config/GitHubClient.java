@@ -38,8 +38,7 @@ public class GitHubClient {
     public GHInstancer ghInstancer() throws Exception {
         log.info(
                 "Creating GHInstancer client for app-id:{}",
-                coreBuildProperties.getGithubAppId(),
-                coreBuildProperties.getGithubAppInstallationId()
+                coreBuildProperties.getGithubAppId()
         );
         return new GHInstancer(ghAppInstallation());
     }
@@ -48,7 +47,6 @@ public class GitHubClient {
     public GHAppInstallation ghAppInstallation() throws Exception {
         log.info(
                 "Creating GHAppInstallation client for inst-id:{}",
-                coreBuildProperties.getGithubAppId(),
                 coreBuildProperties.getGithubAppInstallationId()
         );
         var gh = new GitHubBuilder().withJwtToken(createJWT()).build();
@@ -109,12 +107,12 @@ public class GitHubClient {
          */
         public GitHub getClient() throws Exception {
             if (gitHub == null || Instant.now().isAfter(tokenExpirationTime.minusSeconds(300))) {
-                log.debug("Creating GitHub client for installation:{}", ghAppInstallation.getAccount().getLogin());
+                log.debug("Creating GitHub client for account:{}", ghAppInstallation.getAccount().getLogin());
                 GHAppInstallationToken token = ghAppInstallation.createToken().create();
                 gitHub = new GitHubBuilder().withAppInstallationToken(token.getToken()).build();
                 tokenExpirationTime = token.getExpiresAt().toInstant();
             } else {
-                log.debug("Reusing GitHub client for installation:{}", ghAppInstallation.getAccount().getLogin());
+                log.debug("Reusing GitHub client for account:{}", ghAppInstallation.getAccount().getLogin());
             }
             return gitHub;
         }
