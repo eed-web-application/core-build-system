@@ -12,7 +12,7 @@ public class ComponentNotFoundByUrl extends ControllerLogicException {
     @Builder(builderMethodName = "byUrl")
     public ComponentNotFoundByUrl(Integer errorCode, String url) {
         super(errorCode,
-                String.format("The component with name '%s' has not been found", url),
+                String.format("The component with url '%s' has not been found", url),
                 getAllMethodInCall()
         );
     }

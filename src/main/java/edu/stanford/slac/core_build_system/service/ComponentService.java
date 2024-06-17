@@ -3,13 +3,13 @@ package edu.stanford.slac.core_build_system.service;
 import edu.stanford.slac.ad.eed.baselib.exception.ControllerLogicException;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentMapper;
+import edu.stanford.slac.core_build_system.exception.BranchNotFound;
 import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFoundByUrl;
-import edu.stanford.slac.core_build_system.model.Component;
-import edu.stanford.slac.core_build_system.model.ComponentDependency;
-import edu.stanford.slac.core_build_system.model.Version;
+import edu.stanford.slac.core_build_system.model.*;
 import edu.stanford.slac.core_build_system.repository.CommandTemplateRepository;
+import edu.stanford.slac.core_build_system.repository.ComponentBranchBuildRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
 import edu.stanford.slac.core_build_system.service.engine.EngineFactory;
 import jakarta.validation.Valid;
@@ -30,6 +30,7 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.*;
 public class ComponentService {
     private final ComponentMapper componentMapper;
     private final ComponentRepository componentRepository;
+    private final ComponentBranchBuildRepository componentBranchBuildRepository;
     private final CommandTemplateRepository commandTemplateRepository;
     private final EngineFactory engineFactory;
 

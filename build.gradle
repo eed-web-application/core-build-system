@@ -9,8 +9,8 @@ plugins {
 group = 'edu.stanford.slac'
 version = '1.0.0'
 ext{
-    ad_eed_baselib_version="0.1.47"
-    ad_eed_base_mongodb_lib_version="0.1.20"
+    ad_eed_baselib_version = "0.1.48"
+    ad_eed_base_mongodb_lib_version = "0.1.20"
     javaSourceCompatibility = JavaVersion.VERSION_21
     javaTargetCompatibility = JavaVersion.VERSION_21
 }
@@ -76,10 +76,15 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5' // or 'io.jsonwebtoken:jjwt-gson:0.12.5' for gson
-    implementation 'org.bouncycastle:bcprov-jdk16:1.45'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:6.9.0.202403050737-r'
 
     // github api
     implementation'org.kohsuke:github-api:1.321'
+
+    // kubernetes api
+//    implementation 'io.kubernetes:client-java:20.0.1'
+    implementation 'io.fabric8:kubernetes-client:6.13.0'
     //eed library
     implementation "edu.stanford.slac:slac-ad-eed-baselib:$project.ext.ad_eed_baselib_version",
             "edu.stanford.slac:slac-ad-eed-base-mongodb-lib:$project.ext.ad_eed_base_mongodb_lib_version"
@@ -96,6 +101,7 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.awaitility:awaitility:4.0.3'
+    testImplementation 'io.fabric8:kube-api-test:6.13.0'
 }
 
 sourceSets {
@@ -119,12 +125,15 @@ test {
     exclude '**/cis_api/**'
     // Configure test logging
     testLogging {
-        // Show standard output and error streams only for failed tests
-        showStandardStreams = false
-        // Set the format for the exception stack trace
-        exceptionFormat = 'full'
-        // Log events for failed     and skipped tests
-        events 'failed', 'skipped'
+        events 'FAILED',
+                'SKIPPED',
+                'STANDARD_ERROR',
+                'STANDARD_OUT'
+
+        showCauses true
+        showExceptions true
+        showStackTraces true
+        showStandardStreams true
     }
 
     // Customize the logging for test results

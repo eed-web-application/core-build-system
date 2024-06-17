@@ -2,6 +2,7 @@ package edu.stanford.slac.core_build_system.service;
 
 import edu.stanford.slac.ad.eed.baselib.exception.ControllerLogicException;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
+import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.model.CommandTemplate;
@@ -15,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.annotation.DirtiesContext;
@@ -35,6 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ActiveProfiles({"test"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ComponentServiceTest {
+    @MockBean
+    GitHubClient.GHInstancer ghInstancer;
     @Autowired
     MongoTemplate mongoTemplate;
     @Autowired

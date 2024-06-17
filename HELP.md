@@ -23,3 +23,27 @@ These additional references should also help you:
 
 * [Gradle Build Scans – insights for your project's build](https://scans.gradle.com#gradle)
 
+### Kubernetes configuration
+```yaml
+# service-account.yaml
+------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-scale-sa
+  namespace: test-scale-ns
+# cluster-role-binding.yaml
+------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: test-scale-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: ServiceAccount
+    name: test-scale-sa # defined in service-account.yaml
+
+```
