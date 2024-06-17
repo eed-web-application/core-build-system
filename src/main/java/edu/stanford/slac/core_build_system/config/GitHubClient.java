@@ -29,7 +29,7 @@ import java.util.Date;
 @Configuration
 @RequiredArgsConstructor
 public class GitHubClient {
-    private CoreBuildProperties coreBuildProperties;
+    private final CoreBuildProperties coreBuildProperties;
     private final long ttMsec = 600000;
 
     @Bean
