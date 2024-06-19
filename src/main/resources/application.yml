@@ -43,8 +43,8 @@ edu:
         artifact-root-directory: ${CBS_ARTIFACT_ROOT_DIR:/tmp/cbs-artifact}
         k8s-build-namespace: ${CBS_K8S_BUILD_NAMESPACE:build-ns}
         build-volume-claim-name: ${CBS_BUILD_VOLUME_CLAIM_NAME:build-scratch-volume-claim}
-        builder-group-id: ${CBS_BUILDER_GROUP_ID}
-        builder-user-id: ${CBS_BUILDER_USER_ID}
+        builder-group-id: ${CBS_BUILDER_GROUP_ID:}
+        builder-user-id: ${CBS_BUILDER_USER_ID:}
       ad:
         eed:
           baselib:
