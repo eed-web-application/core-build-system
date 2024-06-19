@@ -298,7 +298,7 @@ public class ProcessBuildTask {
         String scratchFSDirectory = coreBuildProperties.getBuildFsRootDirectory();
         String scratchBuildFolder = "%s/%s-%s-%s-%s".formatted(
                 coreBuildProperties.getBuildScratchRootDirectory(),
-                UUID.randomUUID().toString().substring(0, 8),
+                componentBranchBuildDTO.id(),
                 componentBranchBuildDTO.buildOs(),
                 comp.name(),
                 componentBranchBuildDTO.branchName());
