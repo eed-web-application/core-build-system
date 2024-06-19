@@ -312,7 +312,8 @@ public class ProcessBuildTask {
             Files.createDirectories(path);
         } else {
             log.info("{} Directory exists, deleting contents: {}", logPrefix, path);
-            deleteDirectoryContents(path);
+            deleteDirectoryAndContents(path);
+            Files.createDirectories(path);
         }
         log.info("{} Downloading repository", logPrefix);
         String repositoryPath = gitServerRepository.downLoadRepository(componentMapper.toModel(comp), componentBranchBuildDTO.branchName(), path.toString());
@@ -326,15 +327,18 @@ public class ProcessBuildTask {
      * @param path The path to the directory
      * @throws IOException if there is an error
      */
-    private static void deleteDirectoryContents(Path path) throws IOException {
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(path)) {
-            for (Path entry : directoryStream) {
-                if (Files.isDirectory(entry)) {
-                    deleteDirectoryContents(entry);
-                } else {
-                    Files.delete(entry);
+    private static void deleteDirectoryAndContents(Path path) throws IOException {
+        if (Files.exists(path)) {
+            try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(path)) {
+                for (Path entry : directoryStream) {
+                    if (Files.isDirectory(entry)) {
+                        deleteDirectoryAndContents(entry);
+                    } else {
+                        Files.delete(entry);
+                    }
                 }
             }
+            Files.delete(path); // Delete the directory itself
         }
     }
 }
