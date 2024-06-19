@@ -41,6 +41,7 @@ public class KubernetesRepository {
 
     /**
      * Check if namespace exists
+     *
      * @param namespace namespace name
      * @return true if namespace exists
      */
@@ -54,38 +55,56 @@ public class KubernetesRepository {
 
     /**
      * Create a new builder pod
-     * @param namespace namespace name
+     *
+     * @param namespace   namespace name
      * @param builderName component name
      * @return the newly created podName
      */
     public Pod spinUpBuildPod(K8SPodBuilder podBuilder) {
         Pod result = null;
-        ClassPathResource cpResourcePV = new ClassPathResource("pod-builder-template.yaml");
-        try (InputStream inputStream = new FileInputStream(cpResourcePV.getFile())) {
-            Pod p = Serialization.unmarshal(inputStream , Pod.class);
-            p.getMetadata().setName("builder-%s".formatted(podBuilder.getBuilderName().toLowerCase(Locale.ROOT)));
-            p.getMetadata().setNamespace(podBuilder.getNamespace());
-            p.getSpec().getContainers().getFirst().setImage(podBuilder.getDockerImage());
-            if(podBuilder.getBuildCommand()!=null) {
-                p.getSpec().getContainers().getFirst().setCommand(podBuilder.getBuildCommand());
-            }
-            if(podBuilder.getBuildArgs()!=null) {
-                p.getSpec().getContainers().getFirst().setArgs(podBuilder.getBuildArgs());
-            }
-            p.getSpec().getContainers().getFirst().getVolumeMounts().getFirst().setMountPath(podBuilder.getMountLocation());
-            if(podBuilder.getEnvVars() != null){
-                podBuilder.getEnvVars().forEach((k,v) -> p.getSpec().getContainers().getFirst().getEnv().add(new EnvVarBuilder().withName(k).withValue(v).build()));
-            }
-            result = client.resource(p).create();
-            log.info("Pod created: {}", result.getMetadata().getName());
-            return p;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        Pod newPod = new PodBuilder()
+                .withNewMetadata()
+                .withNamespace(podBuilder.getNamespace())
+                .withName("builder-%s".formatted(podBuilder.getBuilderName().toLowerCase(Locale.ROOT)))
+                .endMetadata()
+                .withNewSpec()
+                .addNewContainer()
+                .withName("builder-%s".formatted(podBuilder.getBuilderName().toLowerCase(Locale.ROOT)))
+                .withImage(podBuilder.getDockerImage())
+                .addNewVolumeMount()
+                .withName("data-volume")
+                .withMountPath(podBuilder.getMountLocation())
+                .endVolumeMount()
+                .endContainer()
+                .addNewVolume()
+                .withName("data-volume")
+                .withNewPersistentVolumeClaim()
+                .withClaimName("build-scratch-volume-claim")
+                .endPersistentVolumeClaim()
+                .endVolume()
+                .withRestartPolicy("Never")
+                .endSpec()
+                .build();
+
+        if (podBuilder.getBuildCommand() != null) {
+            newPod.getSpec().getContainers().getFirst().setCommand(podBuilder.getBuildCommand());
         }
+        if (podBuilder.getBuildArgs() != null) {
+            newPod.getSpec().getContainers().getFirst().setArgs(podBuilder.getBuildArgs());
+        }
+
+        if (podBuilder.getEnvVars() != null) {
+            podBuilder.getEnvVars().forEach((k, v) -> newPod.getSpec().getContainers().getFirst().getEnv().add(new EnvVarBuilder().withName(k).withValue(v).build()));
+        }
+        result = client.resource(newPod).create();
+        log.info("Pod created: {}", result.getMetadata().getName());
+        return p;
+
     }
 
     /**
      * Get the pod
+     *
      * @return the pod
      */
     public PodResource getPod(String namespace, String podName) {
@@ -94,11 +113,12 @@ public class KubernetesRepository {
 
     /**
      * Delete the pod
+     *
      * @return the pod
      */
-    public List<StatusDetails> deletePod(String namespace, String podName){
+    public List<StatusDetails> deletePod(String namespace, String podName) {
         var pod = client.pods().inNamespace(namespace).withName(podName);
-        if(pod == null){
+        if (pod == null) {
             return Collections.emptyList();
         }
         return pod.delete();
@@ -106,16 +126,17 @@ public class KubernetesRepository {
 
     /**
      * Create a new persistent volume
+     *
      * @param pvResourceInputstream input stream of the persistent volume resource
      */
-    public void createPersistenceVolume(InputStream pvResourceInputstream, String namespace){
+    public void createPersistenceVolume(InputStream pvResourceInputstream, String namespace) {
         PersistentVolume pv = Serialization.unmarshal(pvResourceInputstream, PersistentVolume.class);
         pv.getMetadata().setNamespace(namespace);
         var result = client.resource(pv).create();
         log.info("PV created: {}", result.getMetadata().getName());
     }
 
-    public void createPersistenceVolumeClaim(InputStream pvcResourceInputstream, String namespace){
+    public void createPersistenceVolumeClaim(InputStream pvcResourceInputstream, String namespace) {
         PersistentVolumeClaim pvc = Serialization.unmarshal(pvcResourceInputstream, PersistentVolumeClaim.class);
         pvc.getMetadata().setNamespace(namespace);
         var result = client.resource(pvc).create();
