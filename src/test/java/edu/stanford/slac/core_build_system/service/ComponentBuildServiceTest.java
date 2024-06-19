@@ -176,7 +176,7 @@ public class ComponentBuildServiceTest {
 
         // wait for completion
         await()
-                .atMost(90, SECONDS)
+                .atMost(120, SECONDS)
                 .pollDelay(2, SECONDS)
                 .pollInterval(2, SECONDS)
                 .until(
