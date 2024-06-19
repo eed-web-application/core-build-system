@@ -20,6 +20,8 @@ public class CoreBuildProperties {
     private String buildScratchRootDirectory;
     private String buildPodMountPoint;
     private String buildVolumeClaimName;
+    private Long builderUserId;
+    private Long builderGroupId;
     private String artifactRootDirectory;
 
     private String k8sBuildNamespace;

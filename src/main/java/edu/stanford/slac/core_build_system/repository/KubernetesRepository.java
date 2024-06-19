@@ -93,6 +93,19 @@ public class KubernetesRepository {
                 .endSpec()
                 .build();
 
+        if (coreBuildProperties.getBuilderUserId() != null || coreBuildProperties.getBuilderGroupId() != null) {
+            log.info("Setting security context for pod {}", newPod.getMetadata().getName());
+            SecurityContextBuilder securityContextBuilder = new SecurityContextBuilder();
+            if (coreBuildProperties.getBuilderUserId() != null) {
+                log.info("Setting runAsUser to {} for pod {}", coreBuildProperties.getBuilderUserId(), newPod.getMetadata().getName());
+                securityContextBuilder.withRunAsUser(coreBuildProperties.getBuilderUserId());
+            }
+            if (coreBuildProperties.getBuilderGroupId() != null) {
+                log.info("Setting runAsGroup to {} for pod {}", coreBuildProperties.getBuilderGroupId(), newPod.getMetadata().getName());
+                securityContextBuilder.withRunAsGroup(coreBuildProperties.getBuilderGroupId());
+            }
+            newPod.getSpec().getContainers().getFirst().setSecurityContext(securityContextBuilder.build());
+        }
         if (podBuilder.getBuildCommand() != null) {
             newPod.getSpec().getContainers().getFirst().setCommand(podBuilder.getBuildCommand());
         }
