@@ -88,9 +88,8 @@ public class GithubServerRepository implements GitServerRepository {
      * @throws Exception if there is an error
      */
     public String downLoadRepository(Component component, String branchName, String clonePath) throws Exception {
-        GHRepository repo = ghInstancer.ghOrganization().getRepository(component.getName());
         try (Git git = Git.cloneRepository()
-                .setURI(repo.getHttpTransportUrl())
+                .setURI(component.getUrl())
                 .setBranch(branchName)
                 .setDirectory(new File(clonePath))
                 .setCredentialsProvider(ghInstancer.gitCredentialsProvider())
