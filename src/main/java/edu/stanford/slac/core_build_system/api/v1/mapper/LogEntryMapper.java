@@ -21,5 +21,12 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
         componentModel = "spring"
 )
 public abstract class LogEntryMapper {
-    abstract public LogEntryDTO toDTO(LogEntry logEntry);
+    /**
+     * Maps a LogEntry to a LogEntryDTO
+     *
+     * @param logEntry The LogEntry to map
+     * @return The mapped LogEntryDTO
+     */
+    @Mapping(target = "id", source = "id")
+    abstract public LogEntryDTO fromModel(LogEntry logEntry);
 }

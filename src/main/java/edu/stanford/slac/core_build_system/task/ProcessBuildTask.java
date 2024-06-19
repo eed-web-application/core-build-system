@@ -265,6 +265,11 @@ public class ProcessBuildTask {
 
                                         )
                                 .mountLocation("/mnt")
+                                .label(
+                                        Map.of(
+                                                "cbs-build-d", componentBranchBuildDTO.id()
+                                        )
+                                )
                                 .envVars(
                                         Map.of(
                                                 "ADBS_COMPONENT", comp.name(),

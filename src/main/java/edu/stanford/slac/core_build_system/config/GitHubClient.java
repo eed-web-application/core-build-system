@@ -26,7 +26,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 
-@Profile("!test")
+//@Profile("!test")
 @Log4j2
 @Configuration
 @RequiredArgsConstructor

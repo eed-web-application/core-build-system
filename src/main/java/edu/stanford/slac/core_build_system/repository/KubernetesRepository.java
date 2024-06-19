@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Log4j2
 @Repository
@@ -112,9 +113,11 @@ public class KubernetesRepository {
         if (podBuilder.getBuildArgs() != null) {
             newPod.getSpec().getContainers().getFirst().setArgs(podBuilder.getBuildArgs());
         }
-
         if (podBuilder.getEnvVars() != null) {
             podBuilder.getEnvVars().forEach((k, v) -> newPod.getSpec().getContainers().getFirst().getEnv().add(new EnvVarBuilder().withName(k).withValue(v).build()));
+        }
+        if(podBuilder.getLabel() != null) {
+            newPod.getMetadata().setLabels(podBuilder.getLabel());
         }
         result = client.resource(newPod).create();
         log.info("Pod created: {}", result.getMetadata().getName());
@@ -138,6 +141,19 @@ public class KubernetesRepository {
      */
     public List<StatusDetails> deletePod(String namespace, String podName) {
         var pod = client.pods().inNamespace(namespace).withName(podName);
+        if (pod == null) {
+            return Collections.emptyList();
+        }
+        return pod.delete();
+    }
+
+    /**
+     * Delete the pod
+     *
+     * @return the pod
+     */
+    public List<StatusDetails> deletePod(String namespace, Map<String,String> labels) {
+        var pod = client.pods().inNamespace(namespace).withLabels(labels);
         if (pod == null) {
             return Collections.emptyList();
         }

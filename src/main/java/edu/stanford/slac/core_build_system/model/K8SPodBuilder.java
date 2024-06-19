@@ -19,5 +19,6 @@ public class K8SPodBuilder {
     private String builderName;
     private String dockerImage;
     private String mountLocation;
+    private Map<String,String> label;
     private Map<String,String> envVars;
 }

@@ -253,7 +253,7 @@ public class ComponentBuildService {
                 -1
         );
         return foundLogs.stream()
-                .map(logEntryMapper::toDTO)
+                .map(logEntryMapper::fromModel)
                 .toList();
     }
 
