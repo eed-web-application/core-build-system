@@ -56,8 +56,7 @@ public class KubernetesRepository {
     /**
      * Create a new builder pod
      *
-     * @param namespace   namespace name
-     * @param builderName component name
+     * @param podBuilder the pod builder
      * @return the newly created podName
      */
     public Pod spinUpBuildPod(K8SPodBuilder podBuilder) {
@@ -98,7 +97,7 @@ public class KubernetesRepository {
         }
         result = client.resource(newPod).create();
         log.info("Pod created: {}", result.getMetadata().getName());
-        return p;
+        return result;
 
     }
 
