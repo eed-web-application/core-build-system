@@ -19,6 +19,7 @@ public class CoreBuildProperties {
     private String buildFsRootDirectory;
     private String buildScratchRootDirectory;
     private String buildPodMountPoint;
+    private String buildVolumeClaimName;
     private String artifactRootDirectory;
 
     private String k8sBuildNamespace;

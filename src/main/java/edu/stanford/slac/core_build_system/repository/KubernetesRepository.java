@@ -1,5 +1,6 @@
 package edu.stanford.slac.core_build_system.repository;
 
+import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.model.K8SPodBuilder;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -21,6 +22,7 @@ import java.util.Locale;
 @Repository
 @RequiredArgsConstructor
 public class KubernetesRepository {
+    private final CoreBuildProperties coreBuildProperties;
     private final KubernetesClient client;
 
     public void ensureNamespace(String namespace) {
@@ -78,7 +80,7 @@ public class KubernetesRepository {
                 .addNewVolume()
                 .withName("data-volume")
                 .withNewPersistentVolumeClaim()
-                .withClaimName("build-scratch-volume-claim")
+                .withClaimName(coreBuildProperties.getBuildVolumeClaimName())
                 .endPersistentVolumeClaim()
                 .endVolume()
                 .withRestartPolicy("Never")
