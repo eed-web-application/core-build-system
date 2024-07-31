@@ -42,9 +42,9 @@ public class GithubRepositoryTest {
 //    public void clean() {
 //        mongoTemplate.remove(new Query(), Component.class);
 //    }
-//
+
 //    @Test
-//    public void testGithub() {
+    public void testGithub() {
 //        var customAppComponentId = assertDoesNotThrow(
 //                () -> componentService.create(
 //                        NewComponentDTO
@@ -67,5 +67,5 @@ public class GithubRepositoryTest {
 //        assertDoesNotThrow(
 //                () -> gitServerRepository.downLoadRepository(customAppComponent.get(), "main", "/tmp/custom-app-1")
 //        );
-//    }
+    }
 }
