@@ -44,9 +44,10 @@ public class TestControllerHelperService {
 
     /**
      * Create a new component
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
+     *
+     * @param mockMvc         MockMvc
+     * @param resultMatcher   ResultMatcher
+     * @param userInfo        Optional<String>
      * @param newComponentDTO NewComponentDTO
      * @return ApiResultResponse<String>
      */
@@ -71,10 +72,11 @@ public class TestControllerHelperService {
 
     /**
      * Find a component by an id
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
-     * @param id String
+     *
+     * @param mockMvc       MockMvc
+     * @param resultMatcher ResultMatcher
+     * @param userInfo      Optional<String>
+     * @param id            String
      * @return ApiResultResponse<ComponentDTO>
      */
     public ApiResultResponse<ComponentDTO> componentControllerFindById(
@@ -96,10 +98,11 @@ public class TestControllerHelperService {
 
     /**
      * Delete a component by his id
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
-     * @param id String
+     *
+     * @param mockMvc       MockMvc
+     * @param resultMatcher ResultMatcher
+     * @param userInfo      Optional<String>
+     * @param id            String
      * @return ApiResultResponse<Boolean>
      */
     public ApiResultResponse<Boolean> componentControllerDeleteById(
@@ -121,10 +124,11 @@ public class TestControllerHelperService {
 
     /**
      * Update a component by his id
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
-     * @param id String
+     *
+     * @param mockMvc            MockMvc
+     * @param resultMatcher      ResultMatcher
+     * @param userInfo           Optional<String>
+     * @param id                 String
      * @param updateComponentDTO UpdateComponentDTO
      * @return ApiResultResponse<Boolean>
      */
@@ -149,10 +153,11 @@ public class TestControllerHelperService {
 
     /**
      * List all components
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
-     * @return ApiResultResponse<List<ComponentSummaryDTO>>
+     *
+     * @param mockMvc       MockMvc
+     * @param resultMatcher ResultMatcher
+     * @param userInfo      Optional<String>
+     * @return ApiResultResponse<List < ComponentSummaryDTO>>
      */
     public ApiResultResponse<List<ComponentSummaryDTO>> componentControllerFindAll(
             MockMvc mockMvc,
@@ -172,9 +177,10 @@ public class TestControllerHelperService {
 
     /**
      * Create a new command
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
+     *
+     * @param mockMvc               MockMvc
+     * @param resultMatcher         ResultMatcher
+     * @param userInfo              Optional<String>
      * @param newCommandTemplateDTO NewCommandTemplateDTO
      * @return ApiResultResponse<String>
      */
@@ -199,10 +205,11 @@ public class TestControllerHelperService {
 
     /**
      * Find a command by an id
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
-     * @param id String
+     *
+     * @param mockMvc       MockMvc
+     * @param resultMatcher ResultMatcher
+     * @param userInfo      Optional<String>
+     * @param id            String
      * @return ApiResultResponse<CommandTemplateDTO>
      */
     public ApiResultResponse<CommandTemplateDTO> commandControllerFindById(
@@ -224,10 +231,11 @@ public class TestControllerHelperService {
 
     /**
      * Delete a command by his id
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
-     * @param id String
+     *
+     * @param mockMvc       MockMvc
+     * @param resultMatcher ResultMatcher
+     * @param userInfo      Optional<String>
+     * @param id            String
      * @return ApiResultResponse<Boolean>
      */
     public ApiResultResponse<Boolean> commandControllerDeleteById(
@@ -249,10 +257,11 @@ public class TestControllerHelperService {
 
     /**
      * Update a command by his id
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
-     * @param id String
+     *
+     * @param mockMvc                  MockMvc
+     * @param resultMatcher            ResultMatcher
+     * @param userInfo                 Optional<String>
+     * @param id                       String
      * @param updateCommandTemplateDTO UpdateCommandTemplateDTO
      * @return ApiResultResponse<Boolean>
      */
@@ -277,10 +286,11 @@ public class TestControllerHelperService {
 
     /**
      * List all commands
-     * @param mockMvc MockMvc
-     * @param resultMatcher     ResultMatcher
-     * @param userInfo         Optional<String>
-     * @return ApiResultResponse<List<CommandTemplateSummaryDTO>>
+     *
+     * @param mockMvc       MockMvc
+     * @param resultMatcher ResultMatcher
+     * @param userInfo      Optional<String>
+     * @return ApiResultResponse<List < CommandTemplateSummaryDTO>>
      */
     public ApiResultResponse<List<CommandTemplateSummaryDTO>> commandControllerFindAll(
             MockMvc mockMvc,
@@ -441,10 +451,14 @@ public class TestControllerHelperService {
             MockMvc mockMvc,
             ResultMatcher resultMatcher,
             String componentName,
-            String branchName
+            String branchName,
+            Optional<Map<String, String>> buildVariables
     ) throws Exception {
         var requestBuilder = post("/v1/build/component/{componentName}/branch/{branchName}", componentName, branchName)
                 .contentType(MediaType.APPLICATION_JSON);
+        // add build variable as headers
+        buildVariables.ifPresent(vp -> vp.forEach(requestBuilder::header));
+        // executed post request
         return executeHttpRequest(
                 new TypeReference<>() {
                 },
