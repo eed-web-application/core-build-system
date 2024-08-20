@@ -13,7 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController()
 @RequestMapping("/v1/build")
@@ -33,10 +36,15 @@ public class BuildController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResultResponse<List<String>> createNewBuild(
             @PathVariable @NotEmpty String componentName,
-            @PathVariable @NotEmpty String branchName
-    ) {
+            @PathVariable @NotEmpty String branchName,
+            @RequestHeader HashMap<String, String> headers
+            ) {
+        // fetch all the header that has ADBS_ as prefix and create a new map
+        Map<String, String> buildVariables = headers.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith("ADBS_"))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return ApiResultResponse.of(
-                componentBuildService.startBuild(componentName, branchName)
+                componentBuildService.startBuild(componentName, branchName, buildVariables)
         );
     }
 

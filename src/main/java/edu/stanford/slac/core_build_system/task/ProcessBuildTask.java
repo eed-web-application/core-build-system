@@ -247,6 +247,7 @@ public class ProcessBuildTask {
         log.info("{} Downloaded spin-up pod", logPrefix);
         String scratchLocation = downloadRepository(logPrefix, comp, componentBranchBuildDTO);
         log.info("{} Spinning up pod for build", logPrefix);
+
         // we have branch
         Pod newlyCretedPod = wrapCatch(
                 () -> kubernetesRepository.spinUpBuildPod(
@@ -270,16 +271,7 @@ public class ProcessBuildTask {
                                                 "cbs-build-d", componentBranchBuildDTO.id()
                                         )
                                 )
-                                .envVars(
-                                        Map.of(
-                                                "ADBS_COMPONENT", comp.name(),
-                                                "ADBS_BRANCH", componentBranchBuildDTO.branchName(),
-                                                "ADBS_LINUX_USER", "",
-                                                "ADBS_GH_USER", "",
-                                                "ADBS_SOURCE", "/mnt/%s".formatted(scratchLocation),
-                                                "ADBS_BUILD_COMMAND", (comp.buildInstructions() == null ? "" : comp.buildInstructions())
-                                        )
-                                )
+                                .envVars(getVariables(comp, componentBranchBuildDTO, scratchLocation))
                                 .build()
                 ),
                 -5
@@ -288,6 +280,30 @@ public class ProcessBuildTask {
                 .builderName(newlyCretedPod.getMetadata().getName())
                 .scratchLocation(scratchLocation)
                 .build();
+    }
+
+    /**
+     * Get the variables for the build
+     *
+     * @param comp                    The component
+     * @param componentBranchBuildDTO The branch to build
+     * @param scratchLocation         The scratch location
+     * @return The variables for the build
+     */
+    private static Map<String, String> getVariables(ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO, String scratchLocation) {
+        Map<String, String> customVariables = Objects.requireNonNullElse
+                (
+                        componentBranchBuildDTO.buildCustomVariables(),
+                        new HashMap<>()
+                );
+        // add the default variables
+        customVariables.put("ADBS_COMPONENT", comp.name());
+        customVariables.put("ADBS_BRANCH", componentBranchBuildDTO.branchName());
+        customVariables.put("ADBS_LINUX_USER", "");
+        customVariables.put("ADBS_GH_USER", "");
+        customVariables.put("ADBS_SOURCE", "/mnt/%s".formatted(scratchLocation));
+        customVariables.put("ADBS_BUILD_COMMAND", (comp.buildInstructions() == null ? "" : comp.buildInstructions()));
+        return customVariables;
     }
 
     /**

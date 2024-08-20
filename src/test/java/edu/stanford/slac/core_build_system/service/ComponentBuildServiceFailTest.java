@@ -4,14 +4,11 @@ import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.exception.BranchNotFound;
-import edu.stanford.slac.core_build_system.exception.BuildNotFound;
 import edu.stanford.slac.core_build_system.exception.BuildOSMissing;
-import edu.stanford.slac.core_build_system.exception.RepositoryNotFound;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
 import edu.stanford.slac.core_build_system.model.LogEntry;
 import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
-import edu.stanford.slac.core_build_system.utility.GitServer;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.junit.jupiter.api.*;
@@ -31,12 +28,10 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
 @AutoConfigureMockMvc
 @SpringBootTest()
@@ -97,7 +92,7 @@ public class ComponentBuildServiceFailTest {
         // start build
         BuildOSMissing buildOSMissing = assertThrows(
                 BuildOSMissing.class,
-                () -> componentBuildService.startBuild("boost-libraries", "branch1")
+                () -> componentBuildService.startBuild("boost-libraries", "branch1", buildVariables)
         );
         assertThat(buildOSMissing).isNotNull();
         assertThat(buildOSMissing.getErrorCode()).isEqualTo(-3);
@@ -127,7 +122,7 @@ public class ComponentBuildServiceFailTest {
         // start build
         BranchNotFound branchNotFound = assertThrows(
                 BranchNotFound.class,
-                () -> componentBuildService.startBuild("boost-libraries", "branch1")
+                () -> componentBuildService.startBuild("boost-libraries", "branch1", buildVariables)
         );
         AssertionsForClassTypes.assertThat(branchNotFound).isNotNull();
         AssertionsForClassTypes.assertThat(branchNotFound.getErrorCode()).isEqualTo(-4);

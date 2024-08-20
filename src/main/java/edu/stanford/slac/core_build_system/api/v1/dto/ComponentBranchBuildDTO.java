@@ -12,6 +12,7 @@ import lombok.Builder;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Builder(toBuilder = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -32,6 +33,8 @@ public record ComponentBranchBuildDTO(
         String buildImageUrl,
         @Schema(description = "The status of the build")
         BuildStatusDTO buildStatus,
+        @Schema(description = "The custom variables that are used to perform this build")
+        Map<String,String> buildCustomVariables,
         @JsonDeserialize(using = LocalDateTimeDeserializer.class)
         @JsonSerialize(using = LocalDateTimeSerializer.class)
         @Schema(description = "The date and time when the build was started")

@@ -169,8 +169,8 @@ public class ComponentBuildServiceTest {
         List<String> buildIds = assertDoesNotThrow(
                 () -> componentBuildService.startBuild(
                         component.name(),
-                        "branch1"
-                )
+                        "branch1",
+                        buildVariables)
         );
         assertThat(buildIds).isNotNull();
 

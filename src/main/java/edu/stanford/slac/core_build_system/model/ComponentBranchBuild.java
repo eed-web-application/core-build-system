@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.mapping.FieldType;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Data
 @Builder
@@ -47,6 +48,11 @@ public class ComponentBranchBuild {
      * The URL of the image that is used to perform this build
      */
     private String buildImageUrl;
+
+    /**
+     * A hash map that has the custom variables that are used to perform this build
+     */
+    private Map<String,String> buildCustomVariables;
 
     /**
      * The status of the build

@@ -41,11 +41,12 @@ public class ComponentBuildService {
     /**
      * Start a new build for a component/branch
      *
-     * @param componentName The name of the component
-     * @param branchName    The name of the branch
+     * @param componentName  The name of the component
+     * @param branchName     The name of the branch
+     * @param buildVariables
      */
     @Transactional
-    public List<String> startBuild(String componentName, String branchName) {
+    public List<String> startBuild(String componentName, String branchName, Map<String, String> buildVariables) {
         List<String> buildIds = new ArrayList<>();
         Component comp = wrapCatch(
                 () -> componentRepository.findByName(componentName)
@@ -108,6 +109,7 @@ public class ComponentBuildService {
                                     .branchName(branchName)
                                     .buildOs(entry.getKey())
                                     .buildImageUrl(entry.getValue())
+                                    .buildCustomVariables(buildVariables)
                                     .build()
                     ),
                     -4
