@@ -31,7 +31,7 @@ public class BuildController {
     )
     @Operation(
             summary = "Start a new build",
-            description = "Start a new build for a component/branch and return the IDs of the started builds"
+            description = "Start a new build for a component/branch and return the IDs of the started builds. Custom build variables can be submitted as headers with the prefix ADBS_"
     )
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResultResponse<List<String>> createNewBuild(
