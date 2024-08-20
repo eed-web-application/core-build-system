@@ -241,7 +241,6 @@ public class ProcessBuildTask {
      * @return The name of the pod
      */
     public BuildInfo spinPodForBuild(String logPrefix, ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO) throws Exception {
-
         // ensure scratch directory nd download  the source code
         // it return the relative path from root scratch directory setting
         log.info("{} Downloaded spin-up pod", logPrefix);
@@ -318,17 +317,18 @@ public class ProcessBuildTask {
     private String downloadRepository(String logPrefix, ComponentDTO comp, ComponentBranchBuildDTO componentBranchBuildDTO) throws Exception {
         log.info("{} Composing scratch directory", logPrefix);
         String scratchFSDirectory = coreBuildProperties.getBuildFsRootDirectory();
-        String scratchBuildFolder = "%s/%s-%s-%s-%s".formatted(
+        String scratchBuildFolderName = "%s/%s-%s-%s-%s/%s".formatted(
                 coreBuildProperties.getBuildScratchRootDirectory(),
-                componentBranchBuildDTO.id(),
-                componentBranchBuildDTO.buildOs(),
                 comp.name(),
-                componentBranchBuildDTO.branchName());
-        String uniqueBuildDirectory = "%s/%s".formatted(
+                componentBranchBuildDTO.branchName(),
+                componentBranchBuildDTO.buildOs(),
+                componentBranchBuildDTO.id(),
+                comp.name());
+        String sourceBuildAbsolutePath = "%s/%s".formatted(
                 scratchFSDirectory,
-                scratchBuildFolder);
-        Path path = Paths.get(uniqueBuildDirectory);
-        log.info("{} Using '{}' directory to build component", logPrefix, uniqueBuildDirectory);
+                scratchBuildFolderName);
+        Path path = Paths.get(sourceBuildAbsolutePath);
+        log.info("{} Using '{}' directory to build component", logPrefix, sourceBuildAbsolutePath);
         if (Files.notExists(path)) {
             log.info("{} Directory does not exist, creating: {}", logPrefix, path);
             Files.createDirectories(path);
@@ -340,7 +340,7 @@ public class ProcessBuildTask {
         log.info("{} Downloading repository", logPrefix);
         String repositoryPath = gitServerRepository.downLoadRepository(componentMapper.toModel(comp), componentBranchBuildDTO.branchName(), path.toString());
         log.info("{} Repository downloaded to {}", logPrefix, repositoryPath);
-        return scratchBuildFolder;
+        return repositoryPath;
     }
 
     /**

@@ -94,7 +94,7 @@ public class GithubServerRepository implements GitServerRepository {
                 .setDirectory(new File(clonePath))
                 .setCredentialsProvider(ghInstancer.gitCredentialsProvider())
                 .call()) {
-            return git.toString();
+           return git.getRepository().getDirectory().getParent();
         }
     }
 }
