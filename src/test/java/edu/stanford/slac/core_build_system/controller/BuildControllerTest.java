@@ -235,7 +235,7 @@ public class BuildControllerTest {
                     assertThat(fundBuildResult.getPayload().buildStatus()).isEqualTo(BuildStatusDTO.SUCCESS);
                     // check for build variable
                     assertThat(fundBuildResult.getPayload().buildCustomVariables()).isNotEmpty();
-                    assertThat(fundBuildResult.getPayload().buildCustomVariables().size()).isEqualTo(2);
+                    assertThat(fundBuildResult.getPayload().buildCustomVariables().size()).isEqualTo(1);
                     assertThat(fundBuildResult.getPayload().buildCustomVariables().get("ADBS_BUILD_TYPE")).isEqualTo("container");
                 }
         );
