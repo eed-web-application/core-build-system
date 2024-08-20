@@ -301,7 +301,7 @@ public class ProcessBuildTask {
         customVariables.put("ADBS_OS_ENVIRONMENT", componentBranchBuildDTO.buildOs().name());
         customVariables.put("ADBS_LINUX_USER", "");
         customVariables.put("ADBS_GH_USER", "");
-        customVariables.put("ADBS_SOURCE", "/mnt/%s".formatted(scratchLocation));
+        customVariables.put("ADBS_SOURCE", "/mnt%s".formatted(scratchLocation));
         customVariables.put("ADBS_BUILD_COMMAND", (comp.buildInstructions() == null ? "" : comp.buildInstructions()));
         return customVariables;
     }
@@ -340,7 +340,7 @@ public class ProcessBuildTask {
         log.info("{} Downloading repository", logPrefix);
         String repositoryPath = gitServerRepository.downLoadRepository(componentMapper.toModel(comp), componentBranchBuildDTO.branchName(), path.toString());
         log.info("{} Repository downloaded to {}", logPrefix, repositoryPath);
-        return repositoryPath;
+        return repositoryPath.substring(scratchFSDirectory.length());
     }
 
     /**
