@@ -34,9 +34,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -184,7 +182,11 @@ public class BuildControllerTest {
                         mockMvc,
                         status().isCreated(),
                         component.name(),
-                        "branch1"
+                        "branch1",
+                        Optional.of(Map.of(
+                                "ADBS_BUILD_TYPE", "container"
+                        ))
+
                 )
         );
         AssertionsForClassTypes.assertThat(newBuildIdsResult).isNotNull();
@@ -231,6 +233,10 @@ public class BuildControllerTest {
                     AssertionsForClassTypes.assertThat(fundBuildResult).isNotNull();
                     AssertionsForClassTypes.assertThat(fundBuildResult.getErrorCode()).isEqualTo(0);
                     assertThat(fundBuildResult.getPayload().buildStatus()).isEqualTo(BuildStatusDTO.SUCCESS);
+                    // check for build variable
+                    assertThat(fundBuildResult.getPayload().buildCustomVariables()).isNotEmpty();
+                    assertThat(fundBuildResult.getPayload().buildCustomVariables().size()).isEqualTo(2);
+                    assertThat(fundBuildResult.getPayload().buildCustomVariables().get("ADBS_BUILD_TYPE")).isEqualTo("container");
                 }
         );
 

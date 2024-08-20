@@ -26,6 +26,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -40,8 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ActiveProfiles({"test", "async-build-processing"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ComponentBuildServiceFailTest {
-    private String repositoryPath = null;
-    private ComponentDTO component = null;
     @MockBean
     private GitHub gitHub;
     @MockBean
@@ -70,7 +70,7 @@ public class ComponentBuildServiceFailTest {
 
 
     @Test
-    public void testbuildFailWithNoBuildOs() throws Exception {
+    public void testBuildFailWithNoBuildOs() throws Exception {
         // create component
         var componentId = assertDoesNotThrow(
                 () -> componentService.create(
@@ -88,7 +88,9 @@ public class ComponentBuildServiceFailTest {
         );
 
         assertThat(componentId).isNotNull();
-
+        Map<String, String> buildVariables = Map.of(
+                "ADBS_BUILD_TYPE", "container"
+        );
         // start build
         BuildOSMissing buildOSMissing = assertThrows(
                 BuildOSMissing.class,
@@ -99,7 +101,7 @@ public class ComponentBuildServiceFailTest {
     }
 
     @Test
-    public void testbuildFailWithNoRepository() throws Exception {
+    public void testBuildFailWithNoRepository() throws Exception {
         // create component
         var componentId = assertDoesNotThrow(
                 () -> componentService.create(
@@ -118,11 +120,13 @@ public class ComponentBuildServiceFailTest {
         );
 
         assertThat(componentId).isNotNull();
-
         // start build
         BranchNotFound branchNotFound = assertThrows(
                 BranchNotFound.class,
-                () -> componentBuildService.startBuild("boost-libraries", "branch1", buildVariables)
+                () -> componentBuildService.startBuild("boost-libraries", "branch1", Map.of(
+                                "ADBS_BUILD_TYPE", "container"
+                        )
+                )
         );
         AssertionsForClassTypes.assertThat(branchNotFound).isNotNull();
         AssertionsForClassTypes.assertThat(branchNotFound.getErrorCode()).isEqualTo(-4);

@@ -31,6 +31,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -165,6 +166,9 @@ public class ComponentBuildServiceTest {
 
     @Test
     public void testBuildComponent() throws Exception {
+        Map<String, String> buildVariables = Map.of(
+                "ADBS_BUILD_TYPE", "container"
+        );
         // build component
         List<String> buildIds = assertDoesNotThrow(
                 () -> componentBuildService.startBuild(

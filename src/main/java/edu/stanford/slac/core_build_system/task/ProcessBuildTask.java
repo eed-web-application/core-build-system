@@ -299,6 +299,7 @@ public class ProcessBuildTask {
         // add the default variables
         customVariables.put("ADBS_COMPONENT", comp.name());
         customVariables.put("ADBS_BRANCH", componentBranchBuildDTO.branchName());
+        customVariables.put("ADBS_OS_ENVIRONMENT", componentBranchBuildDTO.buildOs().name());
         customVariables.put("ADBS_LINUX_USER", "");
         customVariables.put("ADBS_GH_USER", "");
         customVariables.put("ADBS_SOURCE", "/mnt/%s".formatted(scratchLocation));
