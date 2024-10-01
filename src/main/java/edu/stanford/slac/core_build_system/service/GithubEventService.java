@@ -3,6 +3,7 @@ package edu.stanford.slac.core_build_system.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.GitHubPullRequestWebhookDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.GitHubPushWebhookDTO;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -34,7 +35,7 @@ public class GithubEventService {
     public void managePushEvent(String receivedSignature, String payload) throws JsonProcessingException {
         ComponentDTO componentDTO = null;
         GitHubPushWebhookDTO githubPushEventPayload = objectMapper.readValue(payload, GitHubPushWebhookDTO.class);
-        try{
+        try {
             componentDTO = wrapCatch(
                     () -> componentService.findComponentByProjectUrl(
                             List.of(
@@ -45,7 +46,7 @@ public class GithubEventService {
                     ),
                     -1
             );
-        } catch(Throwable e){
+        } catch (Throwable e) {
             log.error(
                     "[GH push event for {}] Error finding component {}",
                     githubPushEventPayload.repository().gitUrl(),
@@ -53,20 +54,53 @@ public class GithubEventService {
             );
         }
 
-        if(componentDTO == null){
+        if (componentDTO == null) {
             return;
         }
 
         // verify signature
         if (
                 !verifySignature(componentDTO.componentToken(), payload, receivedSignature)
-        ){
+        ) {
             log.error("[GH push event for {}] Signature verification failed", githubPushEventPayload.repository().gitUrl());
         }
 
         log.info("[GH push event for {}] Signature verification passed", githubPushEventPayload.repository().gitUrl());
     }
 
+    public void managePREvent(String receivedSignature, String payload) throws JsonProcessingException {
+        ComponentDTO componentDTO = null;
+        GitHubPullRequestWebhookDTO githubPushEventPayload = objectMapper.readValue(payload, GitHubPullRequestWebhookDTO.class);
+        log.info("Received PR event for {}", githubPushEventPayload.repository().gitUrl());
+        componentDTO = wrapCatch(
+                () -> componentService.findComponentByProjectUrl(
+                        List.of(
+                                githubPushEventPayload.repository().gitUrl(),
+                                githubPushEventPayload.repository().sshUrl(),
+                                githubPushEventPayload.repository().cloneUrl()
+                        )
+                ),
+                -1
+        );
+        log.info("Component found: {}", componentDTO);
+        // verify signature
+        if (
+                !verifySignature(componentDTO.componentToken(), payload, receivedSignature)
+        ) {
+            log.error("[GH pr event for {}] Signature verification failed", githubPushEventPayload.repository().gitUrl());
+        }
+
+        log.info("[GH pr event for {}] Signature verification passed", githubPushEventPayload.repository().gitUrl());
+    }
+
+    /**
+     * Verify the signature of the payload
+     *
+     * @param secret            the secret
+     * @param payloadBody       the payload body
+     * @param receivedSignature the received signature
+     * @return true if the signature is verified, false otherwise
+     */
     private boolean verifySignature(String secret, String payloadBody, String receivedSignature) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
@@ -115,5 +149,4 @@ public class GithubEventService {
         }
         return hexString.toString();
     }
-
 }

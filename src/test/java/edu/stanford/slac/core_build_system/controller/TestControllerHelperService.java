@@ -395,13 +395,82 @@ public class TestControllerHelperService {
         );
     }
 
-    private String loadAndResolveJson(String filePath, Map<String, String> valuesMap) throws Exception {
+    /**
+     * Create a new branch
+     */
+    public ApiResultResponse<String> eventControllerHandlePREvent(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String componentToken,
+            String projectUrl,
+            String branchName
+    ) throws Exception {
+        String resolvedJson = loadAndResolveJsonFlat("pull-request-created.json", Map.of(
+                "branch-name", branchName,
+                "project_url", projectUrl
+        ));
+        return eventControllerHandlePushEvent(
+                mockMvc,
+                resultMatcher,
+                generateSignature(resolvedJson, componentToken),
+                "push",
+                resolvedJson
+        );
+    }
+
+    public ApiResultResponse<String> eventControllerHandlePREvent(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String componentToken,
+            Map<String, Object> keyValueMap
+    ) throws Exception {
+        String resolvedJson = loadAndResolveJson("pull-request-created.json", keyValueMap);
+        return eventControllerHandlePushEvent(
+                mockMvc,
+                resultMatcher,
+                generateSignature(resolvedJson, componentToken),
+                "pull_request",
+                resolvedJson
+        );
+    }
+
+    /**
+     * Load a json file and resolve the values
+     */
+    private String loadAndResolveJsonFlat(String filePath, Map<String, String> valuesMap) throws Exception {
         ClassPathResource resource = new ClassPathResource(filePath);
         String jsonTemplate = new String(Files.readAllBytes(resource.getFile().toPath()));
         for (Map.Entry<String, String> entry : valuesMap.entrySet()) {
             jsonTemplate = jsonTemplate.replace("{" + entry.getKey() + "}", entry.getValue());
         }
         return jsonTemplate;
+    }
+
+    /**
+     * Load a json file and resolve the values
+     */
+    private String loadAndResolveJson(String filePath, Map<String, Object> valuesMap) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ClassPathResource resource = new ClassPathResource(filePath);
+        String jsonTemplate = new String(Files.readAllBytes(resource.getFile().toPath()));
+        Map<String, Object> map = objectMapper.readValue(jsonTemplate, new TypeReference<Map<String, Object>>() {
+        });
+        for (Map.Entry<String, Object> entry : valuesMap.entrySet()) {
+            // if key is pointed separated name each part is a key that contains an object
+            // so we need to go deeper on the hasmap
+            if (entry.getKey().contains(".")) {
+                String[] keys = entry.getKey().split("\\.");
+                Map<String, Object> currentMap = map;
+                for (int i = 0; i < keys.length - 1; i++) {
+                    currentMap = (Map<String, Object>) currentMap.get(keys[i]);
+                }
+                currentMap.put(keys[keys.length - 1], entry.getValue());
+            } else {
+                map.put(entry.getKey(), entry.getValue());
+            }
+        }
+        //now re-convert the hashmap to json
+        return objectMapper.writeValueAsString(map);
     }
 
     private String generateSignature(String payload, String secret) throws NoSuchAlgorithmException, InvalidKeyException {

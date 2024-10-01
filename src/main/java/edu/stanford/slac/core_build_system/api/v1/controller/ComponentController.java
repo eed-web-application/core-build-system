@@ -115,4 +115,18 @@ public class ComponentController {
     ) {
         return ApiResultResponse.of(componentService.addNewBranch(componentName, branchDTO));
     }
+
+    @PutMapping(
+            path = "/{componentName}/event/{enable}",
+            produces = {MediaType.APPLICATION_JSON_VALUE}
+    )
+    @Operation(summary = "Enable or disable event on component, event can be push, pull_request, ping and will be triggered directly by github or other provider")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResultResponse<Boolean> eventManagement(
+            @PathVariable @NotEmpty String componentName,
+            @PathVariable Boolean enable
+    ) {
+        componentService.enableEvent(componentName, enable);
+        return ApiResultResponse.of(true);
+    }
 }

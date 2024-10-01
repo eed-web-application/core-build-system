@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.slac.ad.eed.baselib.api.v1.dto.ApiResultResponse;
 import edu.stanford.slac.core_build_system.api.v1.dto.GitHubPingWebhookDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.GitHubPullRequestWebhookDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.GitHubPushWebhookDTO;
 import edu.stanford.slac.core_build_system.service.GithubEventService;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,7 +33,7 @@ public class EventController {
             githubEventService.managePushEvent(signature, payload);
         } else if (event.compareToIgnoreCase("pull_request") == 0) {
             log.info("Received pull request event");
-            GitHubPushWebhookDTO pullRequestEventPayload = objectMapper.readValue(payload, GitHubPushWebhookDTO.class);
+            githubEventService.managePREvent(signature, payload);
         } else if (event.compareToIgnoreCase("ping") == 0) {
             log.info("Received ping event");
             GitHubPingWebhookDTO pingEventPayload = objectMapper.readValue(payload, GitHubPingWebhookDTO.class);

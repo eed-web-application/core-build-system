@@ -11,6 +11,7 @@ import edu.stanford.slac.core_build_system.model.*;
 import edu.stanford.slac.core_build_system.repository.CommandTemplateRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentBranchBuildRepository;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
+import edu.stanford.slac.core_build_system.repository.GitServerRepository;
 import edu.stanford.slac.core_build_system.service.engine.EngineFactory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -33,7 +34,7 @@ public class ComponentService {
     private final ComponentBranchBuildRepository componentBranchBuildRepository;
     private final CommandTemplateRepository commandTemplateRepository;
     private final EngineFactory engineFactory;
-
+    private final GitServerRepository gitServerRepository;
     /**
      * Create a new component
      *
@@ -266,6 +267,28 @@ public class ComponentService {
                 -3
         );
         return true;
+    }
+
+
+    /**
+     * Enable or disable an event
+     *
+     * @param componentName The name of the component
+     * @param enable       The enable flag
+     */
+    public void enableEvent(@NotEmpty String componentName, Boolean enable) {
+        Component comp = wrapCatch(
+                () -> componentRepository.findByName(componentName)
+                        .orElseThrow(
+                                () ->
+                                        ControllerLogicException.builder()
+                                                .errorCode(-1)
+                                                .errorMessage("The component is in use by other components")
+                                                .build()
+
+                        ),
+                -2
+        );
     }
 
     /**

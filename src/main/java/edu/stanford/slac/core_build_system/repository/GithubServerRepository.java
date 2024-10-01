@@ -87,6 +87,7 @@ public class GithubServerRepository implements GitServerRepository {
      * @return The string representation of the repository
      * @throws Exception if there is an error
      */
+    @Override
     public String downLoadRepository(Component component, String branchName, String clonePath) throws Exception {
         try (Git git = Git.cloneRepository()
                 .setURI(component.getUrl())
@@ -96,5 +97,11 @@ public class GithubServerRepository implements GitServerRepository {
                 .call()) {
            return git.getRepository().getDirectory().getParent();
         }
+    }
+
+    public void createHook(String uri, String secret) throws IOException {
+//        GHRepository repo = ghInstancer.ghOrganization().getRepository(repositoryName);
+//        repo.createWebHook(uri, secret, new ArrayList<>(), true, true);
+
     }
 }
