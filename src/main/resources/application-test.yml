@@ -12,9 +12,9 @@ edu:
   stanford:
     slac:
       core-build-system:
-        github-app-id: ${CBS_GH_APP_ID}
-        github-app-installation-id: ${CBS_GH_APP_INST_ID}
-        github-app-private-key: ${CBS_GH_APP_PRIV_KEY}
+        github-app-id: ${CBS_GH_APP_ID:0}
+        github-app-installation-id: ${CBS_GH_APP_INST_ID:0}
+        github-app-private-key: ${CBS_GH_APP_PRIV_KEY:""}
         github-org-name: ${CBS_GH_ORG_NAME:ad-build-test}
       ad:
         eed:
