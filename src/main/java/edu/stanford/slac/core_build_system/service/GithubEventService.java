@@ -68,6 +68,13 @@ public class GithubEventService {
         log.info("[GH push event for {}] Signature verification passed", githubPushEventPayload.repository().gitUrl());
     }
 
+    /**
+     * Manage the PR event from github
+     *
+     * @param receivedSignature the signature received from the webhook
+     * @param payload           the payload received from the webhook
+     * @throws JsonProcessingException
+     */
     public void managePREvent(String receivedSignature, String payload) throws JsonProcessingException {
         ComponentDTO componentDTO = null;
         GitHubPullRequestWebhookDTO githubPushEventPayload = objectMapper.readValue(payload, GitHubPullRequestWebhookDTO.class);

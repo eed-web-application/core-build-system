@@ -3,6 +3,7 @@ package edu.stanford.slac.core_build_system.service;
 import edu.stanford.slac.ad.eed.baselib.exception.ControllerLogicException;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.api.v1.mapper.ComponentMapper;
+import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.exception.BranchNotFound;
 import edu.stanford.slac.core_build_system.exception.ComponentAlreadyExists;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
@@ -16,6 +17,7 @@ import edu.stanford.slac.core_build_system.service.engine.EngineFactory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -25,10 +27,12 @@ import java.util.*;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.*;
 
+@Log4j2
 @Service
 @Validated
 @AllArgsConstructor
 public class ComponentService {
+    private final CoreBuildProperties coreBuildProperties;
     private final ComponentMapper componentMapper;
     private final ComponentRepository componentRepository;
     private final ComponentBranchBuildRepository componentBranchBuildRepository;
@@ -289,6 +293,25 @@ public class ComponentService {
                         ),
                 -2
         );
+
+        if (enable) {
+            log.info("Enable event for component {}", comp.getName());
+            wrapCatch(
+                    () -> {gitServerRepository.enableEvent(
+                            comp,
+                            "%s/v1".formatted(coreBuildProperties.getHostNamePrefix()),
+                            "global-event"); return null;},
+                    -3
+            );
+            log.info("Event enabled for component {}", comp.getName());
+        } else {
+            log.info("Disable event for component {}", comp.getName());
+            wrapCatch(
+                    () -> {gitServerRepository.disableEvent(comp, "global-event"); return null;},
+                    -3
+            );
+            log.info("Event disabled for component {}", comp.getName());
+        }
     }
 
     /**

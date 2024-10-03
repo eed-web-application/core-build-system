@@ -50,12 +50,14 @@ public class GitHubClient {
         private final CoreBuildProperties coreBuildProperties;
         private final long jwtTtMsec = 600000; // JWT token valid duration (10 minutes)
         private final long jwtRefreshBufferSec = 300; // Refresh JWT if less than 5 minutes
+        private GitHub gitHubApp = null; // Client authenticated with JWT
         private GitHub gitHub = null;
         private String token = null;
         private PrivateKey privateKey = null;
         private volatile Instant jwtExpirationTime;
         private GHAppInstallation ghAppInstallation;
-
+        private String installationToken;
+        private Instant installationTokenExpirationTime;
         /**
          * Get the GitHub client
          *
@@ -67,15 +69,20 @@ public class GitHubClient {
             return gitHub;
         }
 
+        public GHApp getApplication() throws Exception {
+            refreshGithubClient();
+            return gitHub.getApp();
+        }
+
         /**
          * Get the GitHub organization
          *
          * @return GitHub organization
          * @throws Exception if there is an error
          */
-        public GHOrganization ghOrganization() throws Exception {
+        public GHOrganization ghOrganization(String organizationName) throws Exception {
             refreshGithubClient();
-            return getClient().getOrganization(ghAppInstallation.getAccount().getLogin());
+            return getClient().getOrganization(organizationName);
         }
 
         /**
@@ -96,12 +103,19 @@ public class GitHubClient {
          * @throws Exception if there is an error
          */
         private void refreshGithubClient() throws Exception {
-            if (gitHub == null || Instant.now().isAfter(jwtExpirationTime.minusSeconds(jwtRefreshBufferSec))) {
+            if (gitHubApp == null || Instant.now().isAfter(jwtExpirationTime.minusSeconds(jwtRefreshBufferSec))) {
                 log.debug("Creating new GitHub client with JWT token for app-id:{}", coreBuildProperties.getGithubAppId());
-                gitHub = new GitHubBuilder().withJwtToken(getJWT()).build();
-                ghAppInstallation = gitHub.getApp().getInstallationById(coreBuildProperties.getGithubAppInstallationId());
+                gitHubApp = new GitHubBuilder().withJwtToken(getJWT()).build();
+                ghAppInstallation = gitHubApp.getApp().getInstallationById(coreBuildProperties.getGithubAppInstallationId());
+            }
+            if (gitHub == null || Instant.now().isAfter(installationTokenExpirationTime.minusSeconds(jwtRefreshBufferSec))) {
+                GHAppInstallationToken instToken = ghAppInstallation.createToken().create();
+                installationToken = instToken.getToken();
+                installationTokenExpirationTime = instToken.getExpiresAt().toInstant();
+                gitHub = new GitHubBuilder().withAppInstallationToken(installationToken).build();
             }
         }
+
 
         /**
          * Get the GitHub app installation
