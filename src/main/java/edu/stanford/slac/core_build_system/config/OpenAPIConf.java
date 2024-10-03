@@ -28,12 +28,17 @@ public class OpenAPIConf {
     @Value("${springdoc.contact.email}")
     private String contactEmail;
 
+    @Value("${springdoc.version}")
+    private String version;
+
     @Autowired
     private AppProperties appProperties;
     @Bean
     public OpenAPI springShopOpenAPI() {
         return new OpenAPI()
-                .info(new Info().title(apiTitle)
+                .info(new Info()
+                        .title(apiTitle)
+                        .version(version)
                         .description(apiDescription)
                         .contact(new Contact().name(contactName).url(contactUrl).email(contactEmail)))
                 .components(new Components()

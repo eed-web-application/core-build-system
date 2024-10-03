@@ -12,6 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
         prefix = "edu.stanford.slac.core-build-system"
 )
 public class CoreBuildProperties {
+    private String githubOrgName;
     private String githubAppId;
     private String githubAppPrivateKey;
     private long githubAppInstallationId;
@@ -25,4 +26,10 @@ public class CoreBuildProperties {
     private String artifactRootDirectory;
 
     private String k8sBuildNamespace;
+
+    /**
+     * Is the prefix of the hostname to add to /v1/.... rest api uri to reflect the real hostname
+     * of the microservice after the deployment. Thi si used as hostname for the event webhook
+     */
+    private String hostNamePrefix;
 }

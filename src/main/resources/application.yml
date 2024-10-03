@@ -45,6 +45,7 @@ edu:
         build-volume-claim-name: ${CBS_BUILD_VOLUME_CLAIM_NAME:build-scratch-volume-claim}
         builder-group-id: ${CBS_BUILDER_GROUP_ID:}
         builder-user-id: ${CBS_BUILDER_USER_ID:}
+        host-name-prefix: ${CBS_HOST_NAME_PREFIX:http://localhost:8080}
       ad:
         eed:
           baselib:
@@ -68,6 +69,7 @@ management:
 
 # swagger-ui custom path
 springdoc:
+  version: 1.0.0
   title: 'Core Build System API'
   description: 'Core Build System API for the Accelerator Division at SLAC National Accelerator Laboratory'
   contact:
@@ -78,6 +80,7 @@ springdoc:
     enabled: false
   api-docs:
     path: /api-docs
+    version: openapi_3_0
 
 mongock:
   migration-scan-package:

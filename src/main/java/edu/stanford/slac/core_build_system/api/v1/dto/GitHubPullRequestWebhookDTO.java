@@ -1,7 +1,8 @@
 package edu.stanford.slac.core_build_system.api.v1.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -11,281 +12,225 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GitHubPullRequestWebhookDTO(
-        @Schema(description = "The action that was performed") String action,
-        @Schema(description = "The number of the pull request") int number,
-        @Schema(description = "Details of the pull request") PullRequest pullRequest,
-        @Schema(description = "The repository details") Repository repository,
-        @Schema(description = "The organization details") Organization organization,
-        @Schema(description = "The sender details") Sender sender
+        @Schema(description = "Reference of the push") @JsonProperty("ref") String ref,
+        @Schema(description = "Commit SHA before the push") @JsonProperty("before") String before,
+        @Schema(description = "Commit SHA after the push") @JsonProperty("after") String after,
+        @Schema(description = "Repository details") @JsonProperty("repository") Repository repository,
+        @Schema(description = "Pusher details") @JsonProperty("pusher") Pusher pusher,
+        @Schema(description = "Organization details") @JsonProperty("organization") Organization organization,
+        @Schema(description = "Sender details") @JsonProperty("sender") Sender sender,
+        @Schema(description = "Indicates if the ref was created") @JsonProperty("created") boolean created,
+        @Schema(description = "Indicates if the ref was deleted") @JsonProperty("deleted") boolean deleted,
+        @Schema(description = "Indicates if the push was forced") @JsonProperty("forced") boolean forced,
+        @Schema(description = "Base reference") @JsonProperty("base_ref") String baseRef,
+        @Schema(description = "Compare URL") @JsonProperty("compare") String compare,
+        @Schema(description = "List of commits") @JsonProperty("commits") List<Commit> commits,
+        @Schema(description = "Head commit") @JsonProperty("head_commit") Commit headCommit
 ) {
-    @Schema(description = "Pull request details")
-    public record PullRequest(
-            @Schema(description = "The API URL of the pull request") String url,
-            @Schema(description = "The ID of the pull request") long id,
-            @Schema(description = "The node ID of the pull request") String nodeId,
-            @Schema(description = "The HTML URL of the pull request") String htmlUrl,
-            @Schema(description = "The diff URL of the pull request") String diffUrl,
-            @Schema(description = "The patch URL of the pull request") String patchUrl,
-            @Schema(description = "The issue URL of the pull request") String issueUrl,
-            @Schema(description = "The number of the pull request") int number,
-            @Schema(description = "The state of the pull request") String state,
-            @Schema(description = "Indicates if the pull request is locked") boolean locked,
-            @Schema(description = "The title of the pull request") String title,
-            @Schema(description = "The user who created the pull request") User user,
-            @Schema(description = "The body of the pull request") String body,
-            @Schema(description = "The creation timestamp of the pull request") String createdAt,
-            @Schema(description = "The last updated timestamp of the pull request") String updatedAt,
-            @Schema(description = "The closed timestamp of the pull request") String closedAt,
-            @Schema(description = "The merged timestamp of the pull request") String mergedAt,
-            @Schema(description = "The SHA of the merge commit") String mergeCommitSha,
-            @Schema(description = "The assignee of the pull request") User assignee,
-            @Schema(description = "The list of assignees of the pull request") List<User> assignees,
-            @Schema(description = "The list of requested reviewers") List<User> requestedReviewers,
-            @Schema(description = "The list of requested teams") List<Team> requestedTeams,
-            @Schema(description = "The list of labels") List<Label> labels,
-            @Schema(description = "The milestone of the pull request") Milestone milestone,
-            @Schema(description = "Indicates if the pull request is a draft") boolean draft,
-            @Schema(description = "The URL of the commits in the pull request") String commitsUrl,
-            @Schema(description = "The URL of the review comments in the pull request") String reviewCommentsUrl,
-            @Schema(description = "The URL of the review comment") String reviewCommentUrl,
-            @Schema(description = "The URL of the comments in the pull request") String commentsUrl,
-            @Schema(description = "The URL of the statuses in the pull request") String statusesUrl,
-            @Schema(description = "The head of the pull request") Branch head,
-            @Schema(description = "The base of the pull request") Branch base,
-            @Schema(description = "The links related to the pull request") Links links,
-            @Schema(description = "The author association") String authorAssociation,
-            @Schema(description = "The auto merge information") AutoMerge autoMerge,
-            @Schema(description = "The active lock reason") String activeLockReason,
-            @Schema(description = "Indicates if the pull request is merged") boolean merged,
-            @Schema(description = "The mergeable state of the pull request") String mergeableState,
-            @Schema(description = "The number of comments on the pull request") int comments,
-            @Schema(description = "The number of review comments on the pull request") int reviewComments,
-            @Schema(description = "Indicates if the maintainer can modify the pull request") boolean maintainerCanModify,
-            @Schema(description = "The number of commits in the pull request") int commits,
-            @Schema(description = "The number of additions in the pull request") int additions,
-            @Schema(description = "The number of deletions in the pull request") int deletions,
-            @Schema(description = "The number of changed files in the pull request") int changedFiles
-    ) {
-    }
 
     @Schema(description = "Repository details")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Repository(
-            @Schema(description = "Repository ID") Long id,
-            @Schema(description = "Repository node ID") String nodeId,
-            @Schema(description = "Repository name") String name,
-            @Schema(description = "Full name of the repository") String fullName,
-            @Schema(description = "Indicates if the repository is private") boolean isPrivate,
-            @Schema(description = "Owner details of the repository") Owner owner,
-            @Schema(description = "HTML URL of the repository") String htmlUrl,
-            @Schema(description = "Description of the repository") String description,
-            @Schema(description = "Indicates if the repository is a fork") boolean fork,
-            @Schema(description = "API URL of the repository") String url,
-            @Schema(description = "Creation timestamp of the repository") String createdAt,
-            @Schema(description = "Last updated timestamp of the repository") String updatedAt,
-            @Schema(description = "Last pushed timestamp of the repository") String pushedAt,
-            @Schema(description = "Git URL of the repository") String gitUrl,
-            @Schema(description = "SSH URL of the repository") String sshUrl,
-            @Schema(description = "Clone URL of the repository") String cloneUrl,
-            @Schema(description = "SVN URL of the repository") String svnUrl,
-            @Schema(description = "Homepage of the repository") String homepage,
-            @Schema(description = "Size of the repository") int size,
-            @Schema(description = "Stargazers count of the repository") int stargazersCount,
-            @Schema(description = "Watchers count of the repository") int watchersCount,
-            @Schema(description = "Programming language of the repository") String language,
-            @Schema(description = "Indicates if the repository has issues enabled") boolean hasIssues,
-            @Schema(description = "Indicates if the repository has projects enabled") boolean hasProjects,
-            @Schema(description = "Indicates if the repository has downloads enabled") boolean hasDownloads,
-            @Schema(description = "Indicates if the repository has wiki enabled") boolean hasWiki,
-            @Schema(description = "Indicates if the repository has pages enabled") boolean hasPages,
-            @Schema(description = "Indicates if the repository has discussions enabled") boolean hasDiscussions,
-            @Schema(description = "Forks count of the repository") int forksCount,
-            @Schema(description = "Mirror URL of the repository") String mirrorUrl,
-            @Schema(description = "Indicates if the repository is archived") boolean archived,
-            @Schema(description = "Indicates if the repository is disabled") boolean disabled,
-            @Schema(description = "Open issues count of the repository") int openIssuesCount,
-            @Schema(description = "License of the repository") String license,
-            @Schema(description = "Indicates if the repository allows forking") boolean allowForking,
-            @Schema(description = "Indicates if the repository is a template") boolean isTemplate,
-            @Schema(description = "Indicates if web commit signoff is required") boolean webCommitSignoffRequired,
-            @Schema(description = "Topics of the repository") List<String> topics,
-            @Schema(description = "Visibility of the repository") String visibility,
-            @Schema(description = "Forks count of the repository") int forks,
-            @Schema(description = "Open issues count of the repository") int openIssues,
-            @Schema(description = "Watchers count of the repository") int watchers,
-            @Schema(description = "Default branch of the repository") String defaultBranch,
-            @Schema(description = "Stargazers count of the repository") int stargazers,
-            @Schema(description = "Master branch of the repository") String masterBranch,
-            @Schema(description = "Organization of the repository") String organization,
-            @Schema(description = "Custom properties of the repository") Map<String, Object> customProperties
+            @Schema(description = "Repository ID") @JsonProperty("id") long id,
+            @Schema(description = "Repository node ID") @JsonProperty("node_id") String nodeId,
+            @Schema(description = "Repository name") @JsonProperty("name") String name,
+            @Schema(description = "Full name of the repository") @JsonProperty("full_name") String fullName,
+            @Schema(description = "Indicates if the repository is private") @JsonProperty("private") boolean isPrivate,
+            @Schema(description = "Owner details") @JsonProperty("owner") Owner owner,
+            @Schema(description = "HTML URL of the repository") @JsonProperty("html_url") String htmlUrl,
+            @Schema(description = "Description of the repository") @JsonProperty("description") String description,
+            @Schema(description = "Indicates if the repository is a fork") @JsonProperty("fork") boolean fork,
+            @Schema(description = "API URL of the repository") @JsonProperty("url") String url,
+            @Schema(description = "Forks URL") @JsonProperty("forks_url") String forksUrl,
+            @Schema(description = "Keys URL") @JsonProperty("keys_url") String keysUrl,
+            @Schema(description = "Collaborators URL") @JsonProperty("collaborators_url") String collaboratorsUrl,
+            @Schema(description = "Teams URL") @JsonProperty("teams_url") String teamsUrl,
+            @Schema(description = "Hooks URL") @JsonProperty("hooks_url") String hooksUrl,
+            @Schema(description = "Issue events URL") @JsonProperty("issue_events_url") String issueEventsUrl,
+            @Schema(description = "Events URL") @JsonProperty("events_url") String eventsUrl,
+            @Schema(description = "Assignees URL") @JsonProperty("assignees_url") String assigneesUrl,
+            @Schema(description = "Branches URL") @JsonProperty("branches_url") String branchesUrl,
+            @Schema(description = "Tags URL") @JsonProperty("tags_url") String tagsUrl,
+            @Schema(description = "Blobs URL") @JsonProperty("blobs_url") String blobsUrl,
+            @Schema(description = "Git tags URL") @JsonProperty("git_tags_url") String gitTagsUrl,
+            @Schema(description = "Git refs URL") @JsonProperty("git_refs_url") String gitRefsUrl,
+            @Schema(description = "Trees URL") @JsonProperty("trees_url") String treesUrl,
+            @Schema(description = "Statuses URL") @JsonProperty("statuses_url") String statusesUrl,
+            @Schema(description = "Languages URL") @JsonProperty("languages_url") String languagesUrl,
+            @Schema(description = "Stargazers URL") @JsonProperty("stargazers_url") String stargazersUrl,
+            @Schema(description = "Contributors URL") @JsonProperty("contributors_url") String contributorsUrl,
+            @Schema(description = "Subscribers URL") @JsonProperty("subscribers_url") String subscribersUrl,
+            @Schema(description = "Subscription URL") @JsonProperty("subscription_url") String subscriptionUrl,
+            @Schema(description = "Commits URL") @JsonProperty("commits_url") String commitsUrl,
+            @Schema(description = "Git commits URL") @JsonProperty("git_commits_url") String gitCommitsUrl,
+            @Schema(description = "Comments URL") @JsonProperty("comments_url") String commentsUrl,
+            @Schema(description = "Issue comment URL") @JsonProperty("issue_comment_url") String issueCommentUrl,
+            @Schema(description = "Contents URL") @JsonProperty("contents_url") String contentsUrl,
+            @Schema(description = "Compare URL") @JsonProperty("compare_url") String compareUrl,
+            @Schema(description = "Merges URL") @JsonProperty("merges_url") String mergesUrl,
+            @Schema(description = "Archive URL") @JsonProperty("archive_url") String archiveUrl,
+            @Schema(description = "Downloads URL") @JsonProperty("downloads_url") String downloadsUrl,
+            @Schema(description = "Issues URL") @JsonProperty("issues_url") String issuesUrl,
+            @Schema(description = "Pulls URL") @JsonProperty("pulls_url") String pullsUrl,
+            @Schema(description = "Milestones URL") @JsonProperty("milestones_url") String milestonesUrl,
+            @Schema(description = "Notifications URL") @JsonProperty("notifications_url") String notificationsUrl,
+            @Schema(description = "Labels URL") @JsonProperty("labels_url") String labelsUrl,
+            @Schema(description = "Releases URL") @JsonProperty("releases_url") String releasesUrl,
+            @Schema(description = "Deployments URL") @JsonProperty("deployments_url") String deploymentsUrl,
+            @Schema(description = "Creation timestamp") @JsonProperty("created_at") Object createdAt,
+            @Schema(description = "Last updated timestamp") @JsonProperty("updated_at") String updatedAt,
+            @Schema(description = "Last pushed timestamp") @JsonProperty("pushed_at") Object pushedAt,
+            @Schema(description = "Git URL") @JsonProperty("git_url") String gitUrl,
+            @Schema(description = "SSH URL") @JsonProperty("ssh_url") String sshUrl,
+            @Schema(description = "Clone URL") @JsonProperty("clone_url") String cloneUrl,
+            @Schema(description = "SVN URL") @JsonProperty("svn_url") String svnUrl,
+            @Schema(description = "Homepage") @JsonProperty("homepage") String homepage,
+            @Schema(description = "Repository size") @JsonProperty("size") int size,
+            @Schema(description = "Stargazers count") @JsonProperty("stargazers_count") int stargazersCount,
+            @Schema(description = "Watchers count") @JsonProperty("watchers_count") int watchersCount,
+            @Schema(description = "Programming language") @JsonProperty("language") String language,
+            @Schema(description = "Has issues enabled") @JsonProperty("has_issues") boolean hasIssues,
+            @Schema(description = "Has projects enabled") @JsonProperty("has_projects") boolean hasProjects,
+            @Schema(description = "Has downloads enabled") @JsonProperty("has_downloads") boolean hasDownloads,
+            @Schema(description = "Has wiki enabled") @JsonProperty("has_wiki") boolean hasWiki,
+            @Schema(description = "Has pages enabled") @JsonProperty("has_pages") boolean hasPages,
+            @Schema(description = "Has discussions enabled") @JsonProperty("has_discussions") boolean hasDiscussions,
+            @Schema(description = "Forks count") @JsonProperty("forks_count") int forksCount,
+            @Schema(description = "Mirror URL") @JsonProperty("mirror_url") String mirrorUrl,
+            @Schema(description = "Is archived") @JsonProperty("archived") boolean archived,
+            @Schema(description = "Is disabled") @JsonProperty("disabled") boolean disabled,
+            @Schema(description = "Open issues count") @JsonProperty("open_issues_count") int openIssuesCount,
+            @Schema(description = "License") @JsonProperty("license") String license,
+            @Schema(description = "Allow forking") @JsonProperty("allow_forking") boolean allowForking,
+            @Schema(description = "Is template") @JsonProperty("is_template") boolean isTemplate,
+            @Schema(description = "Web commit signoff required") @JsonProperty("web_commit_signoff_required") boolean webCommitSignoffRequired,
+            @Schema(description = "Repository topics") @JsonProperty("topics") List<String> topics,
+            @Schema(description = "Visibility") @JsonProperty("visibility") String visibility,
+            @Schema(description = "Forks") @JsonProperty("forks") int forks,
+            @Schema(description = "Open issues") @JsonProperty("open_issues") int openIssues,
+            @Schema(description = "Watchers") @JsonProperty("watchers") int watchers,
+            @Schema(description = "Default branch") @JsonProperty("default_branch") String defaultBranch,
+            @Schema(description = "Stargazers") @JsonProperty("stargazers") int stargazers,
+            @Schema(description = "Master branch") @JsonProperty("master_branch") String masterBranch,
+            @Schema(description = "Organization") @JsonProperty("organization") String organization,
+            @Schema(description = "Custom properties") @JsonProperty("custom_properties") Map<String, Object> customProperties
     ) {
-        @Schema(description = "Owner details of the repository")
+        @Schema(description = "Owner details")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties(ignoreUnknown = true)
         public record Owner(
-                @Schema(description = "Owner login") String login,
-                @Schema(description = "Owner ID") Long id,
-                @Schema(description = "Owner node ID") String nodeId,
-                @Schema(description = "Owner avatar URL") String avatarUrl,
-                @Schema(description = "Owner gravatar ID") String gravatarId,
-                @Schema(description = "Owner API URL") String url,
-                @Schema(description = "Owner HTML URL") String htmlUrl,
-                @Schema(description = "Owner followers URL") String followersUrl,
-                @Schema(description = "Owner following URL") String followingUrl,
-                @Schema(description = "Owner gists URL") String gistsUrl,
-                @Schema(description = "Owner starred URL") String starredUrl,
-                @Schema(description = "Owner subscriptions URL") String subscriptionsUrl,
-                @Schema(description = "Owner organizations URL") String organizationsUrl,
-                @Schema(description = "Owner repos URL") String reposUrl,
-                @Schema(description = "Owner events URL") String eventsUrl,
-                @Schema(description = "Owner received events URL") String receivedEventsUrl,
-                @Schema(description = "Owner type") String type,
-                @Schema(description = "Indicates if the owner is a site admin") boolean siteAdmin
+                @Schema(description = "Owner name") @JsonProperty("name") String name,
+                @Schema(description = "Owner email") @JsonProperty("email") String email,
+                @Schema(description = "Owner login") @JsonProperty("login") String login,
+                @Schema(description = "Owner ID") @JsonProperty("id") long id,
+                @Schema(description = "Owner node ID") @JsonProperty("node_id") String nodeId,
+                @Schema(description = "Owner avatar URL") @JsonProperty("avatar_url") String avatarUrl,
+                @Schema(description = "Owner gravatar ID") @JsonProperty("gravatar_id") String gravatarId,
+                @Schema(description = "Owner API URL") @JsonProperty("url") String url,
+                @Schema(description = "Owner HTML URL") @JsonProperty("html_url") String htmlUrl,
+                @Schema(description = "Followers URL") @JsonProperty("followers_url") String followersUrl,
+                @Schema(description = "Following URL") @JsonProperty("following_url") String followingUrl,
+                @Schema(description = "Gists URL") @JsonProperty("gists_url") String gistsUrl,
+                @Schema(description = "Starred URL") @JsonProperty("starred_url") String starredUrl,
+                @Schema(description = "Subscriptions URL") @JsonProperty("subscriptions_url") String subscriptionsUrl,
+                @Schema(description = "Organizations URL") @JsonProperty("organizations_url") String organizationsUrl,
+                @Schema(description = "Repositories URL") @JsonProperty("repos_url") String reposUrl,
+                @Schema(description = "Events URL") @JsonProperty("events_url") String eventsUrl,
+                @Schema(description = "Received events URL") @JsonProperty("received_events_url") String receivedEventsUrl,
+                @Schema(description = "Owner type") @JsonProperty("type") String type,
+                @Schema(description = "Is site admin") @JsonProperty("site_admin") boolean siteAdmin
         ) {
         }
     }
 
+    @Schema(description = "Pusher details")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Pusher(
+            @Schema(description = "Pusher name") @JsonProperty("name") String name,
+            @Schema(description = "Pusher email") @JsonProperty("email") String email
+    ) {
+    }
+
     @Schema(description = "Organization details")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Organization(
-            @Schema(description = "Organization login") String login,
-            @Schema(description = "Organization ID") Long id,
-            @Schema(description = "Organization node ID") String nodeId,
-            @Schema(description = "Organization API URL") String url,
-            @Schema(description = "Organization repos URL") String reposUrl,
-            @Schema(description = "Organization events URL") String eventsUrl,
-            @Schema(description = "Organization hooks URL") String hooksUrl,
-            @Schema(description = "Organization issues URL") String issuesUrl,
-            @Schema(description = "Organization members URL") String membersUrl,
-            @Schema(description = "Organization public members URL") String publicMembersUrl,
-            @Schema(description = "Organization avatar URL") String avatarUrl,
-            @Schema(description = "Organization description") String description
+            @Schema(description = "Organization login") @JsonProperty("login") String login,
+            @Schema(description = "Organization ID") @JsonProperty("id") long id,
+            @Schema(description = "Organization node ID") @JsonProperty("node_id") String nodeId,
+            @Schema(description = "Organization API URL") @JsonProperty("url") String url,
+            @Schema(description = "Repositories URL") @JsonProperty("repos_url") String reposUrl,
+            @Schema(description = "Events URL") @JsonProperty("events_url") String eventsUrl,
+            @Schema(description = "Hooks URL") @JsonProperty("hooks_url") String hooksUrl,
+            @Schema(description = "Issues URL") @JsonProperty("issues_url") String issuesUrl,
+            @Schema(description = "Members URL") @JsonProperty("members_url") String membersUrl,
+            @Schema(description = "Public members URL") @JsonProperty("public_members_url") String publicMembersUrl,
+            @Schema(description = "Avatar URL") @JsonProperty("avatar_url") String avatarUrl,
+            @Schema(description = "Description") @JsonProperty("description") String description
     ) {
     }
 
     @Schema(description = "Sender details")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record Sender(
-            @Schema(description = "Sender login") String login,
-            @Schema(description = "Sender ID") Long id,
-            @Schema(description = "Sender node ID") String nodeId,
-            @Schema(description = "Sender avatar URL") String avatarUrl,
-            @Schema(description = "Sender gravatar ID") String gravatarId,
-            @Schema(description = "Sender API URL") String url,
-            @Schema(description = "Sender HTML URL") String htmlUrl,
-            @Schema(description = "Sender followers URL") String followersUrl,
-            @Schema(description = "Sender following URL") String followingUrl,
-            @Schema(description = "Sender gists URL") String gistsUrl,
-            @Schema(description = "Sender starred URL") String starredUrl,
-            @Schema(description = "Sender subscriptions URL") String subscriptionsUrl,
-            @Schema(description = "Sender organizations URL") String organizationsUrl,
-            @Schema(description = "Sender repos URL") String reposUrl,
-            @Schema(description = "Sender events URL") String eventsUrl,
-            @Schema(description = "Sender received events URL") String receivedEventsUrl,
-            @Schema(description = "Sender type") String type,
-            @Schema(description = "Indicates if the sender is a site admin") boolean siteAdmin
+            @Schema(description = "Sender login") @JsonProperty("login") String login,
+            @Schema(description = "Sender ID") @JsonProperty("id") long id,
+            @Schema(description = "Sender node ID") @JsonProperty("node_id") String nodeId,
+            @Schema(description = "Sender avatar URL") @JsonProperty("avatar_url") String avatarUrl,
+            @Schema(description = "Sender gravatar ID") @JsonProperty("gravatar_id") String gravatarId,
+            @Schema(description = "Sender API URL") @JsonProperty("url") String url,
+            @Schema(description = "Sender HTML URL") @JsonProperty("html_url") String htmlUrl,
+            @Schema(description = "Followers URL") @JsonProperty("followers_url") String followersUrl,
+            @Schema(description = "Following URL") @JsonProperty("following_url") String followingUrl,
+            @Schema(description = "Gists URL") @JsonProperty("gists_url") String gistsUrl,
+            @Schema(description = "Starred URL") @JsonProperty("starred_url") String starredUrl,
+            @Schema(description = "Subscriptions URL") @JsonProperty("subscriptions_url") String subscriptionsUrl,
+            @Schema(description = "Organizations URL") @JsonProperty("organizations_url") String organizationsUrl,
+            @Schema(description = "Repositories URL") @JsonProperty("repos_url") String reposUrl,
+            @Schema(description = "Events URL") @JsonProperty("events_url") String eventsUrl,
+            @Schema(description = "Received events URL") @JsonProperty("received_events_url") String receivedEventsUrl,
+            @Schema(description = "Sender type") @JsonProperty("type") String type,
+            @Schema(description = "Is site admin") @JsonProperty("site_admin") boolean siteAdmin
     ) {
     }
 
-    @Schema(description = "Branch details")
-    public record Branch(
-            @Schema(description = "Branch label") String label,
-            @Schema(description = "Branch reference") String ref,
-            @Schema(description = "Branch SHA") String sha,
-            @Schema(description = "Branch user details") User user,
-            @Schema(description = "Branch repository details") Repository repo
+    @Schema(description = "Commit details")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Commit(
+            @Schema(description = "Commit ID") @JsonProperty("id") String id,
+            @Schema(description = "Tree ID") @JsonProperty("tree_id") String treeId,
+            @Schema(description = "Is distinct") @JsonProperty("distinct") boolean distinct,
+            @Schema(description = "Commit message") @JsonProperty("message") String message,
+            @Schema(description = "Commit timestamp") @JsonProperty("timestamp") String timestamp,
+            @Schema(description = "Commit URL") @JsonProperty("url") String url,
+            @Schema(description = "Author details") @JsonProperty("author") Author author,
+            @Schema(description = "Committer details") @JsonProperty("committer") Committer committer,
+            @Schema(description = "Files added") @JsonProperty("added") List<String> added,
+            @Schema(description = "Files removed") @JsonProperty("removed") List<String> removed,
+            @Schema(description = "Files modified") @JsonProperty("modified") List<String> modified
     ) {
-    }
+        @Schema(description = "Author details")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public record Author(
+                @Schema(description = "Author name") @JsonProperty("name") String name,
+                @Schema(description = "Author email") @JsonProperty("email") String email,
+                @Schema(description = "Author username") @JsonProperty("username") String username
+        ) {
+        }
 
-    @Schema(description = "User details")
-    public record User(
-            @Schema(description = "User login") String login,
-            @Schema(description = "User ID") Long id,
-            @Schema(description = "User node ID") String nodeId,
-            @Schema(description = "User avatar URL") String avatarUrl,
-            @Schema(description = "User gravatar ID") String gravatarId,
-            @Schema(description = "User API URL") String url,
-            @Schema(description = "User HTML URL") String htmlUrl,
-            @Schema(description = "User followers URL") String followersUrl,
-            @Schema(description = "User following URL") String followingUrl,
-            @Schema(description = "User gists URL") String gistsUrl,
-            @Schema(description = "User starred URL") String starredUrl,
-            @Schema(description = "User subscriptions URL") String subscriptionsUrl,
-            @Schema(description = "User organizations URL") String organizationsUrl,
-            @Schema(description = "User repos URL") String reposUrl,
-            @Schema(description = "User events URL") String eventsUrl,
-            @Schema(description = "User received events URL") String receivedEventsUrl,
-            @Schema(description = "User type") String type,
-            @Schema(description = "Indicates if the user is a site admin") boolean siteAdmin
-    ) {
-    }
-
-    @Schema(description = "Team details")
-    public record Team(
-            @Schema(description = "Team name") String name,
-            @Schema(description = "Team ID") Long id,
-            @Schema(description = "Team node ID") String nodeId,
-            @Schema(description = "Team slug") String slug,
-            @Schema(description = "Team description") String description,
-            @Schema(description = "Team privacy level") String privacy,
-            @Schema(description = "Team permission level") String permission,
-            @Schema(description = "Team members URL") String membersUrl,
-            @Schema(description = "Team repositories URL") String repositoriesUrl,
-            @Schema(description = "Team organization") Organization organization
-    ) {
-    }
-
-    @Schema(description = "Label details")
-    public record Label(
-            @Schema(description = "Label ID") Long id,
-            @Schema(description = "Label node ID") String nodeId,
-            @Schema(description = "Label URL") String url,
-            @Schema(description = "Label name") String name,
-            @Schema(description = "Label description") String description,
-            @Schema(description = "Label color") String color,
-            @Schema(description = "Indicates if the label is a default label") boolean isDefault
-    ) {
-    }
-
-    @Schema(description = "Milestone details")
-    public record Milestone(
-            @Schema(description = "Milestone URL") String url,
-            @Schema(description = "Milestone HTML URL") String htmlUrl,
-            @Schema(description = "Milestone labels URL") String labelsUrl,
-            @Schema(description = "Milestone ID") Long id,
-            @Schema(description = "Milestone node ID") String nodeId,
-            @Schema(description = "Milestone number") int number,
-            @Schema(description = "Milestone state") String state,
-            @Schema(description = "Milestone title") String title,
-            @Schema(description = "Milestone description") String description,
-            @Schema(description = "Milestone creator") User creator,
-            @Schema(description = "Milestone open issues count") int openIssues,
-            @Schema(description = "Milestone closed issues count") int closedIssues,
-            @Schema(description = "Milestone creation timestamp") String createdAt,
-            @Schema(description = "Milestone last updated timestamp") String updatedAt,
-            @Schema(description = "Milestone closed timestamp") String closedAt,
-            @Schema(description = "Milestone due on timestamp") String dueOn
-    ) {
-    }
-
-    @Schema(description = "Links related to the pull request")
-    public record Links(
-            @Schema(description = "Link to the pull request itself") Link self,
-            @Schema(description = "Link to the HTML version of the pull request") Link html,
-            @Schema(description = "Link to the issue related to the pull request") Link issue,
-            @Schema(description = "Link to the comments on the pull request") Link comments,
-            @Schema(description = "Link to the review comments on the pull request") Link reviewComments,
-            @Schema(description = "Link to the review comment on the pull request") Link reviewComment,
-            @Schema(description = "Link to the commits in the pull request") Link commits,
-            @Schema(description = "Link to the statuses of the pull request") Link statuses
-    ) {
-    }
-
-    @Schema(description = "Link details")
-    public record Link(
-            @Schema(description = "URL of the link") String href
-    ) {
-    }
-
-    @Schema(description = "Auto merge details")
-    public record AutoMerge(
-            @Schema(description = "The enabled flag for auto merge") boolean enabled,
-            @Schema(description = "The strategy for auto merge") String strategy
-    ) {
+        @Schema(description = "Committer details")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public record Committer(
+                @Schema(description = "Committer name") @JsonProperty("name") String name,
+                @Schema(description = "Committer email") @JsonProperty("email") String email,
+                @Schema(description = "Committer username") @JsonProperty("username") String username
+        ) {
+        }
     }
 }

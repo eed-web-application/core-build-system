@@ -40,6 +40,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @AutoConfigureMockMvc
@@ -84,7 +85,7 @@ public class ComponentBuildServiceTest {
     public void setUp() throws Exception {
         mongoTemplate.remove(new Query(), Component.class);
         when(ghInstancer.getClient()).thenReturn(gitHub);
-        when(ghInstancer.ghOrganization()).thenReturn(ghOrganization);
+        when(ghInstancer.ghOrganization(anyString())).thenReturn(ghOrganization);
         when(ghInstancer.gitCredentialsProvider()).thenReturn(credentialsProvider);
         when(ghOrganization.getRepository(any())).thenReturn(ghRepository);
         // setup repository

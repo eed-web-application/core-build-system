@@ -23,14 +23,14 @@ public abstract class ComponentMapper {
     @Autowired
     private ComponentRepository componentRepository;
     @Mapping(target = "name", qualifiedByName = "sanitize-name")
-    @Mapping(target = "dependOn", expression = "java(nameToId(newComponentDTO.dependOn()))")
+    @Mapping(target = "dependOn", expression = "java(toModel(newComponentDTO.dependOn()))")
 //    @Mapping(target = "versions", ignore = true)
     abstract public Component toModel(NewComponentDTO newComponentDTO);
     abstract public Component toModel(ComponentDTO componentDTO);
     abstract public ComponentDTO toDTO(Component component);
     abstract public ComponentSummaryDTO toSummaryDTO(Component component);
     @Mapping(target = "name", qualifiedByName = "sanitize-name")
-    @Mapping(target = "dependOn", expression = "java(nameToId(updateComponentDTO.dependOn()))")
+    @Mapping(target = "dependOn", expression = "java(toModel(updateComponentDTO.dependOn()))")
     abstract public Component updateModel(UpdateComponentDTO updateComponentDTO, @MappingTarget Component componentToUpdate);
 
     @Named("sanitize-name")
@@ -40,10 +40,10 @@ public abstract class ComponentMapper {
 
     /**
      * Convert the component name to the component id.
-     * @param name The name of the component.
+     * @param dependency The component name.
      * @return The id of the component.
      */
-    public ComponentDependency nameToId(ComponentDependencyDTO dependency) {
+    public ComponentDependency toModel(ComponentDependencyDTO dependency) {
         String componentId = wrapCatch(
                 ()->
                         componentRepository.findByName(sanitizeName(dependency.componentName()))
@@ -66,12 +66,12 @@ public abstract class ComponentMapper {
 
     /**
      * Convert the list of component names to the list of component ids.
-     * @param names The list of component names.
+     * @param dependencies The list of component dependencies.
      * @return The list of component ids.
      */
-    public Set<ComponentDependency> nameToId(Set<ComponentDependencyDTO> names) {
-        if(names == null) return Collections.emptySet();
-        return names.stream().map(this::nameToId).collect(Collectors.toSet());
+    public Set<ComponentDependency> toModel(Set<ComponentDependencyDTO> dependencies) {
+        if(dependencies == null) return Collections.emptySet();
+        return dependencies.stream().map(this::toModel).collect(Collectors.toSet());
     }
 
     abstract public Branch toModel(BranchDTO branchDTO);

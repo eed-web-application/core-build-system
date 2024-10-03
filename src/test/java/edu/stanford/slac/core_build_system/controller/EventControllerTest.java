@@ -20,6 +20,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -103,6 +104,69 @@ public class EventControllerTest {
                 fullComponent.getPayload().componentToken(),
                 fullComponent.getPayload().url(),
                 "feature/branch1"
+        );
+        assertThat(result).isNotNull()
+                .extracting("payload").isNotNull()
+                .asString().isNotBlank();
+    }
+
+    @Test
+    public void pushPREvent() throws Exception {
+        var newCompIdResult = testControllerHelperService.componentControllerCreate(
+                mockMvc,
+                status().isCreated(),
+                Optional.of("user1@slac.stanford.edu"),
+                NewComponentDTO
+                        .builder()
+                        .name("custom app 1")
+                        .description("custom app 1 for c++ applications")
+                        .organization("custom")
+                        .url("https://www.custom.org/")
+                        .approvalRule("rule1")
+                        .testingCriteria("criteria1")
+                        .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                        .build()
+        );
+        assertThat(newCompIdResult).isNotNull();
+        assertThat(newCompIdResult.getPayload()).isNotBlank();
+
+        var branchCreationResult = testControllerHelperService.componentControllerCreateNewBranch(
+                mockMvc,
+                status().isOk(),
+                Optional.of("user1@slac.stanford.edu"),
+                "custom-app-1",
+                BranchDTO
+                        .builder()
+                        .branchPoint("main")
+                        .branchName("feature/branch1")
+                        .build()
+        );
+        assertThat(branchCreationResult).isNotNull()
+                .extracting("payload").isNotNull()
+                .asString().isNotBlank();
+
+        var fullComponent = testControllerHelperService.componentControllerFindById(
+                mockMvc,
+                status().isOk(),
+                Optional.of("user1@slac.stanford.edu"),
+                newCompIdResult.getPayload()
+        );
+
+        assertThat(fullComponent.getPayload()).isNotNull()
+                .extracting("branches").isNotNull()
+                .asList().isNotEmpty()
+                .extracting("branchName").contains("feature/branch1");
+
+        // simulate github event
+        var result = testControllerHelperService.eventControllerHandlePREvent(
+                mockMvc,
+                status().isOk(),
+                fullComponent.getPayload().componentToken(),
+                Map.of(
+                        "pull_request.head.label", "feature/branch1",
+                        "pull_request.head.ref", "feature/branch1",
+                        "repository.git_url", fullComponent.getPayload().url()
+                )
         );
         assertThat(result).isNotNull()
                 .extracting("payload").isNotNull()

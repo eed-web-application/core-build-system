@@ -21,13 +21,13 @@ public record NewComponentDTO(
         @Schema(description = "The description of the component")
         @NotEmpty String description,
         @Schema(description = "The organization of the component")
-        @NotEmpty String organization,
+        String organization,
         @Schema(description = "The URL of the component [src, artifact, etc.]")
         @NotEmpty String url,
         @Schema(description = "The approval rule of the component")
-        @NotEmpty String approvalRule,
+        String approvalRule,
         @Schema(description = "The testing criteria of the component")
-        @NotEmpty String testingCriteria,
+        String testingCriteria,
         @Valid Set<String> approvalIdentity,
         @Schema(description = "The list of unique identifier of the components that this component depends on.")
         @Valid Set<ComponentDependencyDTO> dependOn,

@@ -1,27 +1,5 @@
 package edu.stanford.slac.core_build_system.repository;
 
-import edu.stanford.slac.core_build_system.api.v1.dto.ComponentDependencyDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
-import edu.stanford.slac.core_build_system.model.Component;
-import edu.stanford.slac.core_build_system.service.ComponentService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-
-import java.util.Set;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
 //@AutoConfigureMockMvc
 //@SpringBootTest()
 //@TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -37,14 +15,15 @@ public class GithubRepositoryTest {
 //    private MongoTemplate mongoTemplate;
 //    @Autowired
 //    private ComponentService componentService;
-//
+//    @Autowired
+//    private CoreBuildProperties coreBuildProperties;
 //    @BeforeEach
 //    public void clean() {
 //        mongoTemplate.remove(new Query(), Component.class);
 //    }
-
+//
 //    @Test
-    public void testGithub() {
+//    public void testGithub() {
 //        var customAppComponentId = assertDoesNotThrow(
 //                () -> componentService.create(
 //                        NewComponentDTO
@@ -65,7 +44,7 @@ public class GithubRepositoryTest {
 //                () -> componentRepository.findById(customAppComponentId)
 //        );
 //        assertDoesNotThrow(
-//                () -> gitServerRepository.downLoadRepository(customAppComponent.get(), "main", "/tmp/custom-app-1")
+//                () -> gitServerRepository.enableEvent(customAppComponent.get(), "https://example.com", "push")
 //        );
-    }
+//    }
 }
