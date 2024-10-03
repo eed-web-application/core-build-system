@@ -109,7 +109,7 @@ public class GithubServerRepository implements GitServerRepository {
         var gitHubHook = repo.createHook(
                 "web",
                 Map.of(
-                        "url", "https://smee.io/IDEMly07AUMWuJ0x",//uriToCall,
+                        "url", uriToCall,
                         "content_type", "json",
                         "secret", component.getComponentToken()
                 ),
@@ -123,7 +123,7 @@ public class GithubServerRepository implements GitServerRepository {
     public void disableEvent(Component component, String uriToCall) throws Exception {
         GHRepository repo = ghInstancer.ghOrganization(coreBuildProperties.getGithubOrgName()).getRepository(component.getName());
         repo.getHooks().stream()
-                .filter(hook -> hook.getConfig().containsValue("https://smee.io/IDEMly07AUMWuJ0x"))
+                .filter(hook -> hook.getConfig().containsValue(uriToCall))
                 .findFirst()
                 .ifPresentOrElse(hook -> {
                             try {
