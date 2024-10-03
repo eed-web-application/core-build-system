@@ -104,24 +104,26 @@ public class GithubServerRepository implements GitServerRepository {
         }
     }
     @Override
-    public void enableEvent(Component component, String uriToCall, String hookName) throws Exception {
+    public void enableEvent(Component component, String uriToCall) throws Exception {
         GHRepository repo = ghInstancer.ghOrganization(coreBuildProperties.getGithubOrgName()).getRepository(component.getName());
         var gitHubHook = repo.createHook(
-                hookName,
+                "web",
                 Map.of(
-                        "url", uriToCall,
+                        "url", "https://smee.io/IDEMly07AUMWuJ0x",//uriToCall,
+                        "content_type", "json",
                         "secret", component.getComponentToken()
                 ),
                 singletonList(GHEvent.ALL),
                 true
         );
+        log.info("Hook created: {}", gitHubHook);
     }
 
     @Override
-    public void disableEvent(Component component, String hookName) throws Exception {
+    public void disableEvent(Component component, String uriToCall) throws Exception {
         GHRepository repo = ghInstancer.ghOrganization(coreBuildProperties.getGithubOrgName()).getRepository(component.getName());
         repo.getHooks().stream()
-                .filter(hook -> hook.getName().equals(hookName))
+                .filter(hook -> hook.getConfig().containsValue("https://smee.io/IDEMly07AUMWuJ0x"))
                 .findFirst()
                 .ifPresentOrElse(hook -> {
                             try {

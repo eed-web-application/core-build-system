@@ -17,7 +17,7 @@ public interface GitServerRepository {
 
     String downLoadRepository(Component component, String branchName, String clonePath) throws Exception;
 
-    void enableEvent(Component component, String uriToCall, String hookName) throws Exception;
+    void enableEvent(Component component, String uriToCall) throws Exception;
 
-    void disableEvent(Component component, String hookName) throws Exception;
+    void disableEvent(Component component, String uriToCall) throws Exception;
 }

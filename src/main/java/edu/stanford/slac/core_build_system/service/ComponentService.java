@@ -299,15 +299,17 @@ public class ComponentService {
             wrapCatch(
                     () -> {gitServerRepository.enableEvent(
                             comp,
-                            "%s/v1".formatted(coreBuildProperties.getHostNamePrefix()),
-                            "global-event"); return null;},
+                            "%s/v1/event/gh/webhook".formatted(coreBuildProperties.getHostNamePrefix())); return null;},
                     -3
             );
             log.info("Event enabled for component {}", comp.getName());
         } else {
             log.info("Disable event for component {}", comp.getName());
             wrapCatch(
-                    () -> {gitServerRepository.disableEvent(comp, "global-event"); return null;},
+                    () -> {gitServerRepository.disableEvent(
+                            comp,
+                            "%s/v1/event/gh/webhook".formatted(coreBuildProperties.getHostNamePrefix())
+                    ); return null;},
                     -3
             );
             log.info("Event disabled for component {}", comp.getName());
