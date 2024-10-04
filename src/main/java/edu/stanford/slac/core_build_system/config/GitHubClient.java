@@ -108,13 +108,17 @@ public class GitHubClient {
                 log.debug("Creating new GitHub client with JWT token for app-id:{}", coreBuildProperties.getGithubAppId());
                 gitHubApp = new GitHubBuilder().withJwtToken(getJWT()).build();
                 ghAppInstallation = gitHubApp.getApp().getInstallationById(coreBuildProperties.getGithubAppInstallationId());
+                log.debug("gitHubApp client created");
             }
             if (gitHub == null || Instant.now().isAfter(installationTokenExpirationTime.minusSeconds(jwtRefreshBufferSec))) {
                 log.debug("Creating new GitHub client with installation token for app-id:{}", coreBuildProperties.getGithubAppId());
                 GHAppInstallationToken instToken = ghAppInstallation.createToken().create();
+                log.debug("Installation token created");
                 installationToken = instToken.getToken();
                 installationTokenExpirationTime = instToken.getExpiresAt().toInstant();
+                log.debug("Create client using installation token");
                 gitHub = new GitHubBuilder().withAppInstallationToken(installationToken).build();
+                log.debug("gitHub client created");
             }
         }
 
