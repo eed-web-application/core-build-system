@@ -1,6 +1,6 @@
 logging:
   level:
-    edu.stanford.slac.code_inventory_system: ${CBS_LOG_LEVEL:DEBUG}
+    edu.stanford.slac.core_build_system: ${CBS_LOG_LEVEL:DEBUG}
 
 server:
   tomcat:
