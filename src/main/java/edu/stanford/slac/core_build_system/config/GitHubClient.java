@@ -1,5 +1,6 @@
 package edu.stanford.slac.core_build_system.config;
 
+import edu.stanford.slac.ad.eed.baselib.exception.ControllerLogicException;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.SignatureAlgorithm;
@@ -109,6 +110,7 @@ public class GitHubClient {
                 ghAppInstallation = gitHubApp.getApp().getInstallationById(coreBuildProperties.getGithubAppInstallationId());
             }
             if (gitHub == null || Instant.now().isAfter(installationTokenExpirationTime.minusSeconds(jwtRefreshBufferSec))) {
+                log.debug("Creating new GitHub client with installation token for app-id:{}", coreBuildProperties.getGithubAppId());
                 GHAppInstallationToken instToken = ghAppInstallation.createToken().create();
                 installationToken = instToken.getToken();
                 installationTokenExpirationTime = instToken.getExpiresAt().toInstant();
@@ -128,7 +130,12 @@ public class GitHubClient {
                 if (Security.getProvider("BC") == null) {
                     Security.addProvider(new BouncyCastleProvider());
                 }
-                String keyStr = new String(Base64.getDecoder().decode(coreBuildProperties.getGithubAppPrivateKey()));
+                var key = coreBuildProperties.getGithubAppPrivateKey();
+                if(key == null) {
+                    throw ControllerLogicException.builder().errorCode(-1).errorMessage("GitHub app private key is not set").errorDomain("GitHubClient").build();
+                }
+                log.debug("Creating private key from GitHub app private key");
+                String keyStr = new String(Base64.getDecoder().decode(key));
                 PemReader pemReader = new PemReader(new StringReader(keyStr));
                 PemObject pemObject = (PemObject) pemReader.readPemObject();
                 byte[] pemContent = pemObject.getContent();
@@ -136,6 +143,7 @@ public class GitHubClient {
                 PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pemContent);
                 KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                 privateKey = keyFactory.generatePrivate(keySpec);
+                log.debug("Private key created");
             }
             return privateKey;
         }
@@ -148,6 +156,7 @@ public class GitHubClient {
          */
         private String getJWT() throws Exception {
             if (token == null || Instant.now().isAfter(jwtExpirationTime.minusSeconds(jwtRefreshBufferSec))){
+                log.debug("Creating new JWT token for app-id:{}", coreBuildProperties.getGithubAppId());
                 //The JWT signature algorithm we will be using to sign the token
                 SignatureAlgorithm signatureAlgorithm = Jwts.SIG.RS256;
 
@@ -175,6 +184,7 @@ public class GitHubClient {
 
                 // update expiration time
                 jwtExpirationTime = Instant.now().plusMillis(jwtTtMsec);
+                log.debug("JWT token created");
             }
             return token;
         }
