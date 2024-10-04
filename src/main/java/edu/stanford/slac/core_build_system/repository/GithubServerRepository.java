@@ -105,7 +105,9 @@ public class GithubServerRepository implements GitServerRepository {
     }
     @Override
     public void enableEvent(Component component, String uriToCall) throws Exception {
+        log.debug("Enabling event for component: {}", component.getName());
         GHRepository repo = ghInstancer.ghOrganization(coreBuildProperties.getGithubOrgName()).getRepository(component.getName());
+        log.debug("Creating hook for component: {}", component.getName());
         var gitHubHook = repo.createHook(
                 "web",
                 Map.of(
@@ -121,7 +123,9 @@ public class GithubServerRepository implements GitServerRepository {
 
     @Override
     public void disableEvent(Component component, String uriToCall) throws Exception {
+        log.debug("Disabling event for component: {}", component.getName());
         GHRepository repo = ghInstancer.ghOrganization(coreBuildProperties.getGithubOrgName()).getRepository(component.getName());
+        log.debug("Deleting hook for component: {}", component.getName());
         repo.getHooks().stream()
                 .filter(hook -> hook.getConfig().containsValue(uriToCall))
                 .findFirst()

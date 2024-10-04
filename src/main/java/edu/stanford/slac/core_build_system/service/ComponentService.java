@@ -287,7 +287,7 @@ public class ComponentService {
                                 () ->
                                         ControllerLogicException.builder()
                                                 .errorCode(-1)
-                                                .errorMessage("The component is in use by other components")
+                                                .errorMessage("The component has not been found")
                                                 .build()
 
                         ),
