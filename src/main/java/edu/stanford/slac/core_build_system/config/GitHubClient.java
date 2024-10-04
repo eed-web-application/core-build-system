@@ -83,6 +83,7 @@ public class GitHubClient {
          */
         public GHOrganization ghOrganization(String organizationName) throws Exception {
             refreshGithubClient();
+            log.debug("Getting organization:{}", organizationName);
             return getClient().getOrganization(organizationName);
         }
 
