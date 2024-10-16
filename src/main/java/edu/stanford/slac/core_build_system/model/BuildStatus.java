@@ -4,5 +4,7 @@ public enum BuildStatus {
     PENDING,
     IN_PROGRESS,
     SUCCESS,
-    FAILED
+    FAILED,
+    STOP_REQUESTED,
+    STOPPED
 }

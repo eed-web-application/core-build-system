@@ -116,7 +116,7 @@ public class KubernetesRepository {
         if (podBuilder.getEnvVars() != null) {
             podBuilder.getEnvVars().forEach((k, v) -> newPod.getSpec().getContainers().getFirst().getEnv().add(new EnvVarBuilder().withName(k).withValue(v).build()));
         }
-        if(podBuilder.getLabel() != null) {
+        if (podBuilder.getLabel() != null) {
             newPod.getMetadata().setLabels(podBuilder.getLabel());
         }
         result = client.resource(newPod).create();
@@ -148,11 +148,25 @@ public class KubernetesRepository {
     }
 
     /**
+     * Stop the pod
+     *
+     * @param namespace namespace
+     * @param podName   pod name
+     */
+    public List<StatusDetails> stopPod(String namespace, String podName) {
+        var pod = client.pods().inNamespace(namespace).withName(podName);
+        if (pod != null) {
+            return pod.delete();
+        }
+        return Collections.emptyList();
+    }
+
+    /**
      * Delete the pod
      *
      * @return the pod
      */
-    public List<StatusDetails> deletePod(String namespace, Map<String,String> labels) {
+    public List<StatusDetails> deletePod(String namespace, Map<String, String> labels) {
         var pod = client.pods().inNamespace(namespace).withLabels(labels);
         if (pod == null) {
             return Collections.emptyList();

@@ -4,5 +4,7 @@ public enum BuildStatusDTO {
     PENDING,
     IN_PROGRESS,
     SUCCESS,
-    FAILED
+    FAILED,
+    STOP_REQUESTED,
+    STOPPED
 }

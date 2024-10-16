@@ -43,7 +43,7 @@ public class ComponentBranchBuildRepositoryImpl implements ComponentBranchBuildR
                         ),
                         new Criteria().andOperator(
                                 Criteria.where("lockTime").exists(false),
-                                Criteria.where("buildStatus").nin(BuildStatus.SUCCESS, BuildStatus.FAILED)
+                                Criteria.where("buildStatus").nin(BuildStatus.SUCCESS, BuildStatus.FAILED, BuildStatus.STOPPED)
                         )
                 )
 

@@ -260,4 +260,76 @@ public class ComponentBuildServiceTest {
                 }
         );
     }
+
+    @Test
+    public void testBreakStartedBuildOnNewBuildRequest() throws Exception {
+        Map<String, String> buildVariables = Map.of(
+                "ADBS_BUILD_TYPE", "container"
+        );
+        // those first build need to go in stopped
+        List<String> buildIdsThatNeedToGoesInStopped = assertDoesNotThrow(
+                () -> componentBuildService.startBuild(
+                        component.name(),
+                        "branch1",
+                        buildVariables)
+        );
+        assertThat(buildIdsThatNeedToGoesInStopped).isNotNull();
+
+        Thread.sleep(5000);
+
+        // these build should be gone in success
+        List<String> buildIdsThatWillSucceed = assertDoesNotThrow(
+                () -> componentBuildService.startBuild(
+                        component.name(),
+                        "branch1",
+                        buildVariables)
+        );
+        assertThat(buildIdsThatWillSucceed).isNotNull();
+
+        // wait for completion of stopped build
+        await()
+                .atMost(120, SECONDS)
+                .pollDelay(2, SECONDS)
+                .pollInterval(2, SECONDS)
+                .until(
+                        () -> {
+                            List<Boolean> completionState = new ArrayList<>();
+                            // fetch each single build
+                            buildIdsThatNeedToGoesInStopped.forEach(
+                                    buildId -> {
+                                        ComponentBranchBuildDTO build = assertDoesNotThrow(
+                                                () -> componentBuildService.findBuildById(buildId)
+                                        );
+                                        assertThat(build).isNotNull();
+                                        completionState.add(build.buildStatus() == BuildStatusDTO.STOPPED || build.buildStatus() == BuildStatusDTO.SUCCESS);
+                                    }
+                            );
+
+                            return completionState.stream().allMatch(s -> s);
+                        }
+                );
+
+        // stop for completion of good build
+        await()
+                .atMost(120, SECONDS)
+                .pollDelay(2, SECONDS)
+                .pollInterval(2, SECONDS)
+                .until(
+                        () -> {
+                            List<Boolean> completionState = new ArrayList<>();
+                            // fetch each single build
+                            buildIdsThatWillSucceed.forEach(
+                                    buildId -> {
+                                        ComponentBranchBuildDTO build = assertDoesNotThrow(
+                                                () -> componentBuildService.findBuildById(buildId)
+                                        );
+                                        assertThat(build).isNotNull();
+                                        completionState.add(build.buildStatus() == BuildStatusDTO.SUCCESS || build.buildStatus() == BuildStatusDTO.FAILED);
+                                    }
+                            );
+
+                            return completionState.stream().allMatch(s -> s);
+                        }
+                );
+    }
 }
