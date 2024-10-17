@@ -157,15 +157,11 @@ public class BuildControllerTest {
         KubernetesInit.init(kubernetesRepository, coreBuildProperties.getK8sBuildNamespace());
     }
 
-    @AfterAll
-    public static void tearDown() {
-        GitServer.cleanup();
-    }
-
     @BeforeEach
     public void cleanBuild() {
         mongoTemplate.remove(new Query(), ComponentBranchBuild.class);
         mongoTemplate.remove(new Query(), LogEntry.class);
+
         // Reset the mock before each test
         taskScheduler.initialize();
     }
@@ -173,6 +169,12 @@ public class BuildControllerTest {
     @AfterEach
     public void cleanComponent() {
         taskScheduler.shutdown();
+    }
+
+
+    @AfterAll
+    public static void tearDown() {
+        GitServer.cleanup();
     }
 
     @Test

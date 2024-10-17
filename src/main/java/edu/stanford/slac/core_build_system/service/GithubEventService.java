@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 
@@ -24,7 +25,7 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 public class GithubEventService {
     ObjectMapper objectMapper;
     ComponentService componentService;
-
+    ComponentBuildService componentBuildService;
     /**
      * Manage the push event from github
      *
@@ -78,7 +79,7 @@ public class GithubEventService {
     public void managePREvent(String receivedSignature, String payload) throws JsonProcessingException {
         ComponentDTO componentDTO = null;
         GitHubPullRequestWebhookDTO githubPushEventPayload = objectMapper.readValue(payload, GitHubPullRequestWebhookDTO.class);
-        log.info("Received PR event for {}", githubPushEventPayload.repository().gitUrl());
+        log.info("Received PR {} event for {}", githubPushEventPayload.action(), githubPushEventPayload.repository().gitUrl());
         componentDTO = wrapCatch(
                 () -> componentService.findComponentByProjectUrl(
                         List.of(
@@ -94,10 +95,24 @@ public class GithubEventService {
         if (
                 !verifySignature(componentDTO.componentToken(), payload, receivedSignature)
         ) {
-            log.error("[GH pr event for {}] Signature verification failed", githubPushEventPayload.repository().gitUrl());
+            log.error("[GH pr event {} for {}] Signature verification failed", githubPushEventPayload.action(), githubPushEventPayload.repository().gitUrl());
         }
 
-        log.info("[GH pr event for {}] Signature verification passed", githubPushEventPayload.repository().gitUrl());
+        log.info("[GH pr event {} for {}] Signature verification passed", githubPushEventPayload.action(), githubPushEventPayload.repository().gitUrl());
+        switch (githubPushEventPayload.action()) {
+            case "opened":
+            case "closed":
+            case "reopened":
+            case "synchronize":
+                Map<String, String> buildVariables = Map.of(
+                        "ADBS_BUILD_TYPE", "container"
+                );
+                componentBuildService.startBuild(componentDTO.name(), githubPushEventPayload.pullRequest().head().ref(),buildVariables);
+                break;
+            default:
+                log.info("Ignoring PR event {} for  {}", githubPushEventPayload.action(), githubPushEventPayload.action());
+                return;
+        }
     }
 
     /**

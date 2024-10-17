@@ -434,6 +434,38 @@ public class TestControllerHelperService {
         );
     }
 
+    public ApiResultResponse<String> eventControllerHandleSyncPREvent(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String componentToken,
+            Map<String, Object> keyValueMap
+    ) throws Exception {
+        String resolvedJson = loadAndResolveJson("pull-request-sync.json", keyValueMap);
+        return eventControllerHandlePushEvent(
+                mockMvc,
+                resultMatcher,
+                generateSignature(resolvedJson, componentToken),
+                "pull_request",
+                resolvedJson
+        );
+    }
+
+    public ApiResultResponse<String> eventControllerHandleClosePREvent(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            String componentToken,
+            Map<String, Object> keyValueMap
+    ) throws Exception {
+        String resolvedJson = loadAndResolveJson("pull-request-close.json", keyValueMap);
+        return eventControllerHandlePushEvent(
+                mockMvc,
+                resultMatcher,
+                generateSignature(resolvedJson, componentToken),
+                "pull_request",
+                resolvedJson
+        );
+    }
+
     /**
      * Load a json file and resolve the values
      */

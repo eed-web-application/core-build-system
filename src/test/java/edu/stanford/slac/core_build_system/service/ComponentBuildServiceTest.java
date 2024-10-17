@@ -74,13 +74,14 @@ public class ComponentBuildServiceTest {
     @InjectMocks
     private GithubServerRepository githubServerRepository;
     @Autowired
-    MongoTemplate mongoTemplate;
+    private MongoTemplate mongoTemplate;
     @Autowired
     private KubernetesRepository kubernetesRepository;
     @Autowired
     private CoreBuildProperties coreBuildProperties;
     @Autowired
     private ThreadPoolTaskScheduler taskScheduler;
+
     @BeforeAll
     public void setUp() throws Exception {
         mongoTemplate.remove(new Query(), Component.class);
@@ -148,7 +149,7 @@ public class ComponentBuildServiceTest {
     }
 
     @AfterAll
-    public static void tearDown() {
+    public void tearDown() {
         GitServer.cleanup();
     }
 
