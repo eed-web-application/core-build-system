@@ -37,7 +37,7 @@ public class EngineController {
     public ResponseEntity<Resource> generateComponentArtifact(
             @Parameter(description = "IS the engine to use represented by his name", required = true)
             @RequestParam String engineName,
-            @Parameter(description = "Is the list of the component id for wich the artifact should be generated", required = true)
+            @Parameter(description = "Is the list of the component id for which the artifact should be generated", required = true)
             @RequestParam String[] componentId,
             @Parameter(description = "is the build specs to use for the generation of the artifact", required = false, example = "{\"buildSpecs\": \"value\"}")
             @RequestParam Map<String,String> allRequestParams

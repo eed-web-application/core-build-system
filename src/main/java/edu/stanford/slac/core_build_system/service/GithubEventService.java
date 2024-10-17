@@ -104,15 +104,25 @@ public class GithubEventService {
             case "closed":
             case "reopened":
             case "synchronize":
-                Map<String, String> buildVariables = Map.of(
-                        "ADBS_BUILD_TYPE", "container"
-                );
-                componentBuildService.startBuild(componentDTO.name(), githubPushEventPayload.pullRequest().head().ref(),buildVariables);
+                manageSynchronize(componentDTO, githubPushEventPayload);
                 break;
             default:
                 log.info("Ignoring PR event {} for  {}", githubPushEventPayload.action(), githubPushEventPayload.action());
                 return;
         }
+    }
+
+    /**
+     * Manage the synchronize event of the pull request from github
+     *
+     * @param componentDTO the component
+     * @param githubPushEventPayload the payload received from the webhook
+     */
+    private void manageSynchronize(ComponentDTO componentDTO, GitHubPullRequestWebhookDTO githubPushEventPayload) {
+        Map<String, String> buildVariables = Map.of(
+                "ADBS_BUILD_TYPE", "container"
+        );
+        componentBuildService.startBuild(componentDTO.name(), githubPushEventPayload.pullRequest().head().ref(),buildVariables);
     }
 
     /**
