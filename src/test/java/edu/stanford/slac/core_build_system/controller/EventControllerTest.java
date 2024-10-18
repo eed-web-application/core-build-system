@@ -31,7 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.*;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
@@ -110,8 +110,7 @@ public class EventControllerTest {
                         BranchDTO
                                 .builder()
                                 .type("feature")
-                                .branchName("branch1")
-                                .branchPoint("main")
+                                .branchName("main")
                                 .build()
                 )
         );
@@ -124,7 +123,7 @@ public class EventControllerTest {
                         BranchDTO
                                 .builder()
                                 .type("feature")
-                                .branchName("branch2")
+                                .branchName("branch1")
                                 .branchPoint("main")
                                 .build()
                 )
@@ -132,8 +131,22 @@ public class EventControllerTest {
         assertThat(branchAddResult2).isNotNull();
         assertThat(branchAddResult2).isTrue();
 
+        var branchAddResult3 = assertDoesNotThrow(
+                () -> componentService.addNewBranch(
+                        "component-a",
+                        BranchDTO
+                                .builder()
+                                .type("feature")
+                                .branchName("branch2")
+                                .branchPoint("main")
+                                .build()
+                )
+        );
+        assertThat(branchAddResult3).isNotNull();
+        assertThat(branchAddResult3).isTrue();
+
         assertDoesNotThrow(
-                ()->kubernetesRepository.ensureNamespace(coreBuildProperties.getK8sBuildNamespace())
+                () -> kubernetesRepository.ensureNamespace(coreBuildProperties.getK8sBuildNamespace())
         );
         KubernetesInit.init(kubernetesRepository, coreBuildProperties.getK8sBuildNamespace());
     }
@@ -202,5 +215,67 @@ public class EventControllerTest {
                             return completionState.stream().allMatch(s -> s);
                         }
                 );
+    }
+
+    @Test
+    public void receivePRCloseEventTest() throws Exception {
+        // simulate github pr sync event
+        var result = testControllerHelperService.eventControllerHandleClosePREvent(
+                mockMvc,
+                status().isOk(),
+                component.componentToken(),
+                Map.of(
+                        "pull_request.head.label", "branch1",
+                        "pull_request.head.ref", "branch1",
+                        "pull_request.base.label", "main",
+                        "pull_request.base.ref", "main",
+                        "repository.git_url", component.url()
+                )
+        );
+        assertThat(result).isNotNull()
+                .extracting("payload").isNotNull()
+                .asString().isNotBlank();
+
+
+        // wait for the completion of the build on branch1
+        await()
+                .atMost(120, SECONDS)
+                .pollDelay(2, SECONDS)
+                .pollInterval(2, SECONDS)
+                .until(
+                        () -> {
+                            List<Boolean> completionState = new ArrayList<>();
+                            var foundBuildsResult = assertDoesNotThrow(
+                                    () -> testControllerHelperService.buildControllerFindByComponentNameAndBranch(
+                                            mockMvc,
+                                            status().isOk(),
+                                            component.name(),
+                                            "main"
+                                    )
+                            );
+                            assertThat(foundBuildsResult).isNotNull();
+                            // fetch each single build
+                            foundBuildsResult.getPayload().forEach(
+                                    componentBranchBuildDTO -> {
+                                        completionState.add(componentBranchBuildDTO.buildStatus() == BuildStatusDTO.SUCCESS);
+                                    }
+                            );
+
+                            return completionState.stream().allMatch(s -> s);
+                        }
+                );
+
+        // get component branch to check if the branch is merged
+        var componentFound = assertDoesNotThrow(
+                () -> testControllerHelperService.componentControllerFindById(
+                        mockMvc,
+                        status().isOk(),
+                        Optional.of("user1@slac.stanford.it"),
+                        component.id()
+                )
+        );
+        assertThat(componentFound).isNotNull();
+        assertThat(componentFound.getPayload()).isNotNull();
+        assertThat(componentFound.getPayload().branches()).extracting("branchName").contains("main");
     }
 }

@@ -273,6 +273,37 @@ public class ComponentService {
         return true;
     }
 
+    /**
+     * Set a branch as merged
+     * @param componentName The name of the component
+     * @param branchName The name of the branch
+     */
+    public void setBranchAsMerged(String componentName, String branchName) {
+        // check if branch exists
+        Component comp = wrapCatch(
+                () -> componentRepository.findByName(componentName)
+                        .orElseThrow(
+                                () ->
+                                        ControllerLogicException.builder()
+                                                .errorCode(-1)
+                                                .errorMessage("The component is in use by other components")
+                                                .build()
+
+                        ),
+                -2
+        );
+
+        // check for branch is present
+        Branch branch = comp.getBranches().stream().filter(b -> b.getBranchName().compareToIgnoreCase(branchName) == 0)
+                .findAny()
+                .orElseThrow(() -> BranchNotFound.byName().errorCode(-3).branchName(branchName).build());
+        branch.setMerged(true);
+        // save the component
+        wrapCatch(
+                () -> componentRepository.save(comp),
+                -4
+        );
+    }
 
     /**
      * Enable or disable an event
