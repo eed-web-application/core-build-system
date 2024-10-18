@@ -1,14 +1,21 @@
 package edu.stanford.slac.core_build_system.controller;
 
-import edu.stanford.slac.core_build_system.api.v1.dto.BranchDTO;
-import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.*;
+import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.model.Component;
+import edu.stanford.slac.core_build_system.model.ComponentBranchBuild;
+import edu.stanford.slac.core_build_system.model.LogEntry;
+import edu.stanford.slac.core_build_system.repository.KubernetesRepository;
 import edu.stanford.slac.core_build_system.service.ComponentService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import edu.stanford.slac.core_build_system.utility.GitServer;
+import edu.stanford.slac.core_build_system.utility.KubernetesInit;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,15 +23,20 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
@@ -44,132 +56,226 @@ public class EventControllerTest {
     private ComponentService componentService;
     @Autowired
     private TestControllerHelperService testControllerHelperService;
+    @MockBean
+    private GHRepository ghRepository;
+    @MockBean
+    private GitHub gitHub;
+    @MockBean
+    private GHOrganization ghOrganization;
+    @MockBean
+    private UsernamePasswordCredentialsProvider credentialsProvider;
+    @Autowired
+    private KubernetesRepository kubernetesRepository;
+    @Autowired
+    private CoreBuildProperties coreBuildProperties;
+    @Autowired
+    private ThreadPoolTaskScheduler taskScheduler;
+    private String repositoryPath = null;
+    private ComponentDTO component = null;
 
     @BeforeEach
-    public void cleanCollection() {
+    public void cleanCollection() throws Exception {
         mongoTemplate.remove(new Query(), Component.class);
+        when(ghInstancer.getClient()).thenReturn(gitHub);
+        when(ghInstancer.ghOrganization(anyString())).thenReturn(ghOrganization);
+        when(ghInstancer.gitCredentialsProvider()).thenReturn(credentialsProvider);
+        when(ghOrganization.getRepository(any())).thenReturn(ghRepository);
+        // setup repository
+        repositoryPath = GitServer.setupServer(List.of("branch1", "branch2"));
+        when(ghRepository.getHttpTransportUrl()).thenReturn(repositoryPath);
+        // create component
+        var componentId = assertDoesNotThrow(
+                () -> componentService.create(
+                        NewComponentDTO
+                                .builder()
+                                .name("component-a")
+                                .description("component-a description")
+                                .organization("organization-a")
+                                .url(repositoryPath)
+                                .buildOs(List.of(BuildOSDTO.ROCKY9, BuildOSDTO.RHEL8))
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .build()
+                )
+        );
+        assertThat(componentId).isNotNull();
+        component = assertDoesNotThrow(
+                () -> componentService.findById(componentId)
+        );
+        assertThat(component).isNotNull();
+        var branchAddResult1 = assertDoesNotThrow(
+                () -> componentService.addNewBranch(
+                        "component-a",
+                        BranchDTO
+                                .builder()
+                                .type("feature")
+                                .branchName("main")
+                                .build()
+                )
+        );
+        assertThat(branchAddResult1).isNotNull();
+        assertThat(branchAddResult1).isTrue();
+
+        var branchAddResult2 = assertDoesNotThrow(
+                () -> componentService.addNewBranch(
+                        "component-a",
+                        BranchDTO
+                                .builder()
+                                .type("feature")
+                                .branchName("branch1")
+                                .branchPoint("main")
+                                .build()
+                )
+        );
+        assertThat(branchAddResult2).isNotNull();
+        assertThat(branchAddResult2).isTrue();
+
+        var branchAddResult3 = assertDoesNotThrow(
+                () -> componentService.addNewBranch(
+                        "component-a",
+                        BranchDTO
+                                .builder()
+                                .type("feature")
+                                .branchName("branch2")
+                                .branchPoint("main")
+                                .build()
+                )
+        );
+        assertThat(branchAddResult3).isNotNull();
+        assertThat(branchAddResult3).isTrue();
+
+        assertDoesNotThrow(
+                () -> kubernetesRepository.ensureNamespace(coreBuildProperties.getK8sBuildNamespace())
+        );
+        KubernetesInit.init(kubernetesRepository, coreBuildProperties.getK8sBuildNamespace());
+    }
+
+
+    @BeforeEach
+    public void cleanBuild() {
+        mongoTemplate.remove(new Query(), ComponentBranchBuild.class);
+        mongoTemplate.remove(new Query(), LogEntry.class);
+        // Reset the mock before each test
+        taskScheduler.initialize();
+    }
+
+    @AfterEach
+    public void clearAfterEach() {
+        taskScheduler.shutdown();
+    }
+
+    @AfterAll
+    public void tearDown() {
+        GitServer.cleanup();
     }
 
     @Test
-    public void pushNewBranchEvent() throws Exception {
-        var newCompIdResult = testControllerHelperService.componentControllerCreate(
-                mockMvc,
-                status().isCreated(),
-                Optional.of("user1@slac.stanford.edu"),
-                NewComponentDTO
-                        .builder()
-                        .name("custom app 1")
-                        .description("custom app 1 for c++ applications")
-                        .organization("custom")
-                        .url("https://www.custom.org/")
-                        .approvalRule("rule1")
-                        .testingCriteria("criteria1")
-                        .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                        .build()
-        );
-        assertThat(newCompIdResult).isNotNull();
-        assertThat(newCompIdResult.getPayload()).isNotBlank();
-
-        var branchCreationResult = testControllerHelperService.componentControllerCreateNewBranch(
+    public void receivePRSyncEventTest() throws Exception {
+        // simulate github pr sync event
+        var result = testControllerHelperService.eventControllerHandleSyncPREvent(
                 mockMvc,
                 status().isOk(),
-                Optional.of("user1@slac.stanford.edu"),
-                "custom-app-1",
-                BranchDTO
-                        .builder()
-                        .branchPoint("main")
-                        .branchName("feature/branch1")
-                        .build()
-        );
-        assertThat(branchCreationResult).isNotNull()
-                .extracting("payload").isNotNull()
-                .asString().isNotBlank();
-
-        var fullComponent = testControllerHelperService.componentControllerFindById(
-                mockMvc,
-                status().isOk(),
-                Optional.of("user1@slac.stanford.edu"),
-                newCompIdResult.getPayload()
-        );
-
-        assertThat(fullComponent.getPayload()).isNotNull()
-                .extracting("branches").isNotNull()
-                .asList().isNotEmpty()
-                .extracting("branchName").contains("feature/branch1");
-
-        // simulate github event
-        var result = testControllerHelperService.eventControllerHandlePushNewBranchEvent(
-                mockMvc,
-                status().isOk(),
-                fullComponent.getPayload().componentToken(),
-                fullComponent.getPayload().url(),
-                "feature/branch1"
-        );
-        assertThat(result).isNotNull()
-                .extracting("payload").isNotNull()
-                .asString().isNotBlank();
-    }
-
-    @Test
-    public void pushPREvent() throws Exception {
-        var newCompIdResult = testControllerHelperService.componentControllerCreate(
-                mockMvc,
-                status().isCreated(),
-                Optional.of("user1@slac.stanford.edu"),
-                NewComponentDTO
-                        .builder()
-                        .name("custom app 1")
-                        .description("custom app 1 for c++ applications")
-                        .organization("custom")
-                        .url("https://www.custom.org/")
-                        .approvalRule("rule1")
-                        .testingCriteria("criteria1")
-                        .approvalIdentity(Set.of("user1@slac.stanford.edu"))
-                        .build()
-        );
-        assertThat(newCompIdResult).isNotNull();
-        assertThat(newCompIdResult.getPayload()).isNotBlank();
-
-        var branchCreationResult = testControllerHelperService.componentControllerCreateNewBranch(
-                mockMvc,
-                status().isOk(),
-                Optional.of("user1@slac.stanford.edu"),
-                "custom-app-1",
-                BranchDTO
-                        .builder()
-                        .branchPoint("main")
-                        .branchName("feature/branch1")
-                        .build()
-        );
-        assertThat(branchCreationResult).isNotNull()
-                .extracting("payload").isNotNull()
-                .asString().isNotBlank();
-
-        var fullComponent = testControllerHelperService.componentControllerFindById(
-                mockMvc,
-                status().isOk(),
-                Optional.of("user1@slac.stanford.edu"),
-                newCompIdResult.getPayload()
-        );
-
-        assertThat(fullComponent.getPayload()).isNotNull()
-                .extracting("branches").isNotNull()
-                .asList().isNotEmpty()
-                .extracting("branchName").contains("feature/branch1");
-
-        // simulate github event
-        var result = testControllerHelperService.eventControllerHandlePREvent(
-                mockMvc,
-                status().isOk(),
-                fullComponent.getPayload().componentToken(),
+                component.componentToken(),
                 Map.of(
-                        "pull_request.head.label", "feature/branch1",
-                        "pull_request.head.ref", "feature/branch1",
-                        "repository.git_url", fullComponent.getPayload().url()
+                        "pull_request.head.label", "branch1",
+                        "pull_request.head.ref", "branch1",
+                        "repository.git_url", component.url()
                 )
         );
         assertThat(result).isNotNull()
                 .extracting("payload").isNotNull()
                 .asString().isNotBlank();
+
+
+        // wait for the completion of the build on branch1
+        await()
+                .atMost(120, SECONDS)
+                .pollDelay(2, SECONDS)
+                .pollInterval(2, SECONDS)
+                .until(
+                        () -> {
+                            List<Boolean> completionState = new ArrayList<>();
+                            var foundBuildsResult = assertDoesNotThrow(
+                                    () -> testControllerHelperService.buildControllerFindByComponentNameAndBranch(
+                                            mockMvc,
+                                            status().isOk(),
+                                            component.name(),
+                                            "branch1"
+                                    )
+                            );
+                            assertThat(foundBuildsResult).isNotNull();
+                            // fetch each single build
+                            foundBuildsResult.getPayload().forEach(
+                                    componentBranchBuildDTO -> {
+                                        completionState.add(componentBranchBuildDTO.buildStatus() == BuildStatusDTO.SUCCESS);
+                                    }
+                            );
+
+                            return completionState.stream().allMatch(s -> s);
+                        }
+                );
+    }
+
+    @Test
+    public void receivePRCloseEventTest() throws Exception {
+        // simulate github pr sync event
+        var result = testControllerHelperService.eventControllerHandleClosePREvent(
+                mockMvc,
+                status().isOk(),
+                component.componentToken(),
+                Map.of(
+                        "pull_request.head.label", "branch1",
+                        "pull_request.head.ref", "branch1",
+                        "pull_request.base.label", "main",
+                        "pull_request.base.ref", "main",
+                        "repository.git_url", component.url()
+                )
+        );
+        assertThat(result).isNotNull()
+                .extracting("payload").isNotNull()
+                .asString().isNotBlank();
+
+
+        // wait for the completion of the build on branch1
+        await()
+                .atMost(120, SECONDS)
+                .pollDelay(2, SECONDS)
+                .pollInterval(2, SECONDS)
+                .until(
+                        () -> {
+                            List<Boolean> completionState = new ArrayList<>();
+                            var foundBuildsResult = assertDoesNotThrow(
+                                    () -> testControllerHelperService.buildControllerFindByComponentNameAndBranch(
+                                            mockMvc,
+                                            status().isOk(),
+                                            component.name(),
+                                            "main"
+                                    )
+                            );
+                            assertThat(foundBuildsResult).isNotNull();
+                            // fetch each single build
+                            foundBuildsResult.getPayload().forEach(
+                                    componentBranchBuildDTO -> {
+                                        completionState.add(componentBranchBuildDTO.buildStatus() == BuildStatusDTO.SUCCESS);
+                                    }
+                            );
+
+                            return completionState.stream().allMatch(s -> s);
+                        }
+                );
+
+        // get component branch to check if the branch is merged
+        var componentFound = assertDoesNotThrow(
+                () -> testControllerHelperService.componentControllerFindById(
+                        mockMvc,
+                        status().isOk(),
+                        Optional.of("user1@slac.stanford.it"),
+                        component.id()
+                )
+        );
+        assertThat(componentFound).isNotNull();
+        assertThat(componentFound.getPayload()).isNotNull();
+        assertThat(componentFound.getPayload().branches()).extracting("branchName").contains("main");
     }
 }

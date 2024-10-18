@@ -28,6 +28,7 @@ public class EventController {
             @RequestHeader("X-Hub-Signature-256") String signature,
             @RequestHeader("X-GitHub-Event") String event,
             @RequestBody String payload) throws JsonProcessingException {
+        log.debug("Received github event '{}' with payload '{}'", event, payload);
         if(event.compareToIgnoreCase("push") == 0) {
             log.info("Received push event");
             githubEventService.managePushEvent(signature, payload);
@@ -36,7 +37,6 @@ public class EventController {
             githubEventService.managePREvent(signature, payload);
         } else if (event.compareToIgnoreCase("ping") == 0) {
             log.info("Received ping event");
-            GitHubPingWebhookDTO pingEventPayload = objectMapper.readValue(payload, GitHubPingWebhookDTO.class);
         } else {
             log.error("Event not mapped {}", payload);
         }

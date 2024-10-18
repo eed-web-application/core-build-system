@@ -14,8 +14,10 @@ public record BranchDTO(
         @Schema(description = "ex: [fix, dev] where fix is meant to merge to main, and dev is not.")
         String type,
         @Schema(description = "The unique name that identify of the branch")
-        @NotEmpty String branchName,
+        String branchName,
         @Schema(description = "The unique name that identify of the branch start point")
-        @NotEmpty String branchPoint
+        String branchPoint,
+        @Schema(description = "Determinate if branch is merged")
+        Boolean isMerged
 ) {
 }

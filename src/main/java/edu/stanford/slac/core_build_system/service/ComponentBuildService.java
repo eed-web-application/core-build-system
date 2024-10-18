@@ -83,11 +83,37 @@ public class ComponentBuildService {
         Branch branch = comp.getBranches().stream().filter(b -> b.getBranchName().compareToIgnoreCase(branchName) == 0)
                 .findAny()
                 .orElseThrow(
-                        () -> BranchNotFound.byName()
-                                .errorCode(-4)
-                                .branchName(branchName)
-                                .build()
+                        () -> {
+                            log.error("[StartBuild {}/{}] branch not found", componentName, branchName);
+                            return BranchNotFound.byName()
+                                    .errorCode(-4)
+                                    .branchName(branchName)
+                                    .build();
+                        }
                 );
+
+        // check if there are other running builds
+        log.info("[StartBuild {}/{}] check if there are other running builds", componentName, branchName);
+        var currentBuild = wrapCatch(
+                () -> componentBranchBuildRepository.findByComponentIdAndBranchName(
+                        comp.getId(),
+                        branchName
+                ),
+                -5
+        );
+        
+        if(!currentBuild.isEmpty()) {
+            log.info("[StartBuild {}/{}] there are other running builds to stop", componentName, branchName);
+            for (var build : currentBuild) {
+                log.info("[StartBuild {}/{}] stopping build {}", componentName, branchName, build.getId());
+                build.setBuildStatus(BuildStatus.STOP_REQUESTED);
+               var updatedBuild = wrapCatch(
+                        ()->componentBranchBuildRepository.save(build),
+                        -6
+                );
+               log.info("[StartBuild {}/{}] build {} stop requested", componentName, branchName, updatedBuild.getId());
+            }
+        }
 
         // fetch image and create hashmap with build Os and image url
         Map<BuildOS, String> osBuildImageUrl = buildImageRepository.findAll().stream()
@@ -112,7 +138,7 @@ public class ComponentBuildService {
                                     .buildCustomVariables(buildVariables)
                                     .build()
                     ),
-                    -4
+                    -7
             );
             log.info("[StartBuild {}/{}] build submitted with id: {}", componentName, branchName, savedBuild.getId());
             buildIds.add(savedBuild.getId());

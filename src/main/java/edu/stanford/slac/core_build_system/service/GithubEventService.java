@@ -8,6 +8,7 @@ import edu.stanford.slac.core_build_system.api.v1.dto.GitHubPushWebhookDTO;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -15,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
 
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 
@@ -24,7 +26,7 @@ import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
 public class GithubEventService {
     ObjectMapper objectMapper;
     ComponentService componentService;
-
+    ComponentBuildService componentBuildService;
     /**
      * Manage the push event from github
      *
@@ -75,10 +77,11 @@ public class GithubEventService {
      * @param payload           the payload received from the webhook
      * @throws JsonProcessingException
      */
+    @Transactional
     public void managePREvent(String receivedSignature, String payload) throws JsonProcessingException {
         ComponentDTO componentDTO = null;
         GitHubPullRequestWebhookDTO githubPushEventPayload = objectMapper.readValue(payload, GitHubPullRequestWebhookDTO.class);
-        log.info("Received PR event for {}", githubPushEventPayload.repository().gitUrl());
+        log.info("Received PR {} event for {}", githubPushEventPayload.action(), githubPushEventPayload.repository().gitUrl());
         componentDTO = wrapCatch(
                 () -> componentService.findComponentByProjectUrl(
                         List.of(
@@ -94,10 +97,54 @@ public class GithubEventService {
         if (
                 !verifySignature(componentDTO.componentToken(), payload, receivedSignature)
         ) {
-            log.error("[GH pr event for {}] Signature verification failed", githubPushEventPayload.repository().gitUrl());
+            log.error("[GH pr event {} for {}] Signature verification failed", githubPushEventPayload.action(), githubPushEventPayload.repository().gitUrl());
         }
 
-        log.info("[GH pr event for {}] Signature verification passed", githubPushEventPayload.repository().gitUrl());
+        log.info("[GH pr event {} for {}] Signature verification passed", githubPushEventPayload.action(), githubPushEventPayload.repository().gitUrl());
+        switch (githubPushEventPayload.action()) {
+            case "opened":
+            case "closed":
+                manageClosed(componentDTO, githubPushEventPayload);
+                break;
+            case "reopened":
+            case "synchronize":
+                manageSynchronize(componentDTO, githubPushEventPayload);
+                break;
+            default:
+                log.info("Ignoring PR event {} for  {}", githubPushEventPayload.action(), githubPushEventPayload.action());
+                return;
+        }
+    }
+
+    /**
+     * Manage the closed event of the pull request from github
+     * closing a pull request need to trigger the build on the base branch(where the branch is merged on)
+     * @param componentDTO the component
+     * @param githubPushEventPayload the payload received from the webhook
+     */
+    private void manageClosed(ComponentDTO componentDTO, GitHubPullRequestWebhookDTO githubPushEventPayload) {
+        Map<String, String> buildVariables = Map.of(
+                "ADBS_BUILD_TYPE", "container"
+        );
+        // start build on base branch
+        log.info("Starting build on base branch {} for PR {}", githubPushEventPayload.pullRequest().base().ref(), githubPushEventPayload.pullRequest().title());
+        componentService.setBranchAsMerged(componentDTO.name(), githubPushEventPayload.pullRequest().head().ref());
+        componentBuildService.startBuild(componentDTO.name(), githubPushEventPayload.pullRequest().base().ref(), buildVariables);
+    }
+
+    /**
+     * Manage the synchronize event of the pull request from github
+     * the synchronization event need to trigger a build on the head branch
+     *
+     * @param componentDTO the component
+     * @param githubPushEventPayload the payload received from the webhook
+     */
+    private void manageSynchronize(ComponentDTO componentDTO, GitHubPullRequestWebhookDTO githubPushEventPayload) {
+        log.info("Starting build on head branch {} for PR {}", githubPushEventPayload.pullRequest().head().ref(), githubPushEventPayload.pullRequest().title());
+        Map<String, String> buildVariables = Map.of(
+                "ADBS_BUILD_TYPE", "container"
+        );
+        componentBuildService.startBuild(componentDTO.name(), githubPushEventPayload.pullRequest().head().ref(),buildVariables);
     }
 
     /**

@@ -14,4 +14,6 @@ public class Branch {
     String type;
     String branchName;
     String branchPoint;
+    @Builder.Default
+    Boolean merged = false;
 }

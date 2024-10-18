@@ -36,8 +36,7 @@ import java.util.*;
 
 import static com.google.common.collect.ImmutableList.of;
 import static edu.stanford.slac.ad.eed.baselib.exception.Utility.wrapCatch;
-import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.IN_PROGRESS;
-import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.PENDING;
+import static edu.stanford.slac.core_build_system.api.v1.dto.BuildStatusDTO.*;
 
 @Log4j2
 @Component
@@ -54,6 +53,7 @@ public class ProcessBuildTask {
 
 
     @Scheduled(fixedDelay = 2000)  // Runs every 5 seconds
+    @Transactional
     public void performTask() {
         log.debug("Start processing build task");
         Optional<ComponentBranchBuildDTO> documentToProcess = componentBuildService.getNextBuildToProcess();
@@ -89,7 +89,7 @@ public class ProcessBuildTask {
                     // spin-up the pod
                     newStatus = IN_PROGRESS;
                     break;
-                case IN_PROGRESS:
+                case IN_PROGRESS: {
                     log.info("{} Build is in progress", logPrefix);
                     BuildStatusDTO podStatus = getPodStatus(logPrefix, buildToProcess);
                     if (podStatus == IN_PROGRESS) {
@@ -119,11 +119,28 @@ public class ProcessBuildTask {
                         }
                     }
                     break;
+                }
                 case SUCCESS:
                     log.info("{} Already completed", logPrefix);
                     break;
                 case FAILED:
                     log.info("{} Build Already failed", logPrefix);
+                    break;
+                case STOP_REQUESTED:  {
+                    log.info("{} Stop requested", logPrefix);
+                    BuildStatusDTO podStatus = getPodStatus(logPrefix, buildToProcess);
+                    if (podStatus == IN_PROGRESS) {
+                        stopPod(logPrefix, buildToProcess);
+                        newStatus = STOPPED;
+                    } else if(podStatus == PENDING) {
+                        newStatus = STOPPED;
+                    }else {
+                        newStatus = podStatus;
+                    }
+                }
+                break;
+                case STOPPED:
+                    log.info("{} Build stopped", logPrefix);
                     break;
                 default:
                     log.error("{} Unknown build status", logPrefix);
@@ -150,6 +167,9 @@ public class ProcessBuildTask {
      * @return The status of the pod
      */
     private BuildStatusDTO getPodStatus(String logPrefix, ComponentBranchBuildDTO buildToProcess) {
+        if(buildToProcess.buildInfo() == null) {
+            return PENDING;
+        }
         log.info("{} Getting pod status", logPrefix);
         PodResource foundPod = kubernetesRepository.getPod(
                 coreBuildProperties.getK8sBuildNamespace(),
@@ -160,6 +180,20 @@ public class ProcessBuildTask {
                 foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated() != null;
         boolean success = terminated && foundPod.get().getStatus().getContainerStatuses().getFirst().getState().getTerminated().getReason().compareToIgnoreCase("Completed") == 0;
         return terminated && success ? BuildStatusDTO.SUCCESS : (terminated ? BuildStatusDTO.FAILED : IN_PROGRESS);
+    }
+
+    /**
+     * Stop the pod
+     *
+     * @param buildToProcess The build to process
+     */
+    private void stopPod(String logPrefix, ComponentBranchBuildDTO buildToProcess) {
+        log.info("{} Stopping pod", logPrefix);
+        var stopPodResult = kubernetesRepository.stopPod(
+                coreBuildProperties.getK8sBuildNamespace(),
+                buildToProcess.buildInfo().builderName()
+        );
+        log.info("{} Pod stopped: {}", logPrefix, stopPodResult);
     }
 
     /**
