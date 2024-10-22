@@ -3,6 +3,7 @@ package edu.stanford.slac.core_build_system.api.v1.mapper;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.model.Branch;
+import edu.stanford.slac.core_build_system.model.Issue;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.ComponentDependency;
 import edu.stanford.slac.core_build_system.repository.ComponentRepository;
@@ -75,4 +76,5 @@ public abstract class ComponentMapper {
     }
 
     abstract public Branch toModel(BranchDTO branchDTO);
+    abstract public Issue toModel(IssueDTO issueDTO);
 }

@@ -5,6 +5,7 @@ import edu.stanford.slac.core_build_system.config.CoreBuildProperties;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.NewBranch;
+import edu.stanford.slac.core_build_system.model.Issue;
 import edu.stanford.slac.core_build_system.model.PullRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -103,6 +104,24 @@ public class GithubServerRepository implements GitServerRepository {
            return git.getRepository().getDirectory().getParent();
         }
     }
+
+    /**
+     * Add issue to repository
+     *
+     * @param component  The component
+     * @param issue The issue
+     */
+    @Override
+    public void addIssue(Component component, Issue issue) throws Exception {
+        log.debug("Add issue for component {}", component.getName());
+        GHRepository repo = ghInstancer.ghOrganization(coreBuildProperties.getGithubOrgName()).getRepository(component.getName());
+        log.debug("Adding issue {} for component {}", issue.getIssueTitle(), component.getName());
+        GHIssueBuilder githubIssueBuilder = repo.createIssue(issue.getIssueTitle());
+        githubIssueBuilder.body(issue.getIssueBody());
+        GHIssue githubIssue = githubIssueBuilder.create();
+        log.info("Issue created: {}", githubIssue);
+    }
+
     @Override
     public void enableEvent(Component component, String uriToCall) throws Exception {
         log.debug("Enabling event for component: {}", component.getName());
