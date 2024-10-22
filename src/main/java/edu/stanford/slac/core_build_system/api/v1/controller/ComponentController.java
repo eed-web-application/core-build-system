@@ -137,7 +137,7 @@ public class ComponentController {
     )
     @Operation(summary = "Create new issue for a component based off cater")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResultResponse<Boolean> addIssue(
+    public ApiResultResponse<String> addIssue(
             @PathVariable @NotEmpty String componentName,
             @RequestBody @Valid IssueDTO issueDTO
     ) {

@@ -353,7 +353,7 @@ public class ComponentService {
      * @param componentName The name of the component
      * @param issueDTO     The new issue
      */
-    public Boolean addNewIssue(String componentName, IssueDTO issueDTO) {
+    public String addNewIssue(String componentName, IssueDTO issueDTO) {
         Component comp = wrapCatch(
                 () -> componentRepository.findByName(componentName)
                         .orElseThrow(
@@ -371,14 +371,14 @@ public class ComponentService {
 
         // Add the issue to the component on github (for now its github only)
         log.info("Add issue for component {}", comp.getName());
-        wrapCatch(
+        String issueLink = wrapCatch(
                 () -> {gitServerRepository.addIssue(
                         comp,
                         componentMapper.toModel(issueDTO)); return null;},
                 -3
         );
         log.info("Issue {} added for component {}", issueDTO.issueTitle(), comp.getName());
-        return true;
+        return issueLink;
     }
 
     /**

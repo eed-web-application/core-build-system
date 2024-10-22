@@ -3,6 +3,7 @@ package edu.stanford.slac.core_build_system.controller;
 import edu.stanford.slac.core_build_system.api.v1.dto.ComponentSummaryDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.UpdateComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.IssueDTO;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.model.Component;
@@ -70,6 +71,47 @@ public class ComponentControllerTest {
         );
         assertThat(newCompIdResult).isNotNull();
         assertThat(newCompIdResult.getPayload()).isNotBlank();
+    }
+
+    @Test   
+    public void createNewIssueOK() throws Exception {
+        // 1) Create the component
+        var newCompIdResult = assertDoesNotThrow(
+                () -> testControllerHelperService.componentControllerCreate(
+                        mockMvc,
+                        status().isCreated(),
+                        Optional.of("user1@slac.stanford.edu"),
+                        NewComponentDTO
+                                .builder()
+                                .name("custom app 1")
+                                .description("custom app 1 for c++ applications")
+                                .organization("custom")
+                                .url("https://www.custom.org/")
+                                .approvalRule("rule1")
+                                .testingCriteria("criteria1")
+                                .approvalIdentity(Set.of("user1@slac.stanford.edu"))
+                                .build()
+                )
+        );
+        assertThat(newCompIdResult).isNotNull();
+        assertThat(newCompIdResult.getPayload()).isNotBlank();
+
+        // 2) Create the issue
+        var issueResult = assertDoesNotThrow(
+                () -> testControllerHelperService.componentControllerCreateIssue(
+                        mockMvc,
+                        status().isOk(),
+                        Optional.of("user1@slac.stanford.edu"),
+                        "custom app 1",
+                        IssueDTO
+                            .builder()
+                            .issueTitle("Fix - CATER #16454")
+                            .issueBody("<Insert CATER Description and hyperlink, once new CATER released>")
+                            .build()
+                )
+        );
+        assertThat(issueResult).isNotNull();
+        assertThat(issueResult.getPayload()).isNotNull();
     }
 
     @Test

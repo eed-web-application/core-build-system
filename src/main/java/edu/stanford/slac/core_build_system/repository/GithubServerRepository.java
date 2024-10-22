@@ -112,7 +112,7 @@ public class GithubServerRepository implements GitServerRepository {
      * @param issue The issue
      */
     @Override
-    public void addIssue(Component component, Issue issue) throws Exception {
+    public String addIssue(Component component, Issue issue) throws Exception {
         log.debug("Add issue for component {}", component.getName());
         GHRepository repo = ghInstancer.ghOrganization(coreBuildProperties.getGithubOrgName()).getRepository(component.getName());
         log.debug("Adding issue {} for component {}", issue.getIssueTitle(), component.getName());
@@ -120,6 +120,8 @@ public class GithubServerRepository implements GitServerRepository {
         githubIssueBuilder.body(issue.getIssueBody());
         GHIssue githubIssue = githubIssueBuilder.create();
         log.info("Issue created: {}", githubIssue);
+        return githubIssue.getHtmlUrl().toString();
+
     }
 
     @Override
