@@ -354,13 +354,14 @@ public class ComponentService {
      * @param issueDTO     The new issue
      */
     public String addNewIssue(String componentName, IssueDTO issueDTO) {
+        // Check if component exists
         Component comp = wrapCatch(
                 () -> componentRepository.findByName(componentName)
                         .orElseThrow(
                                 () ->
                                         ControllerLogicException.builder()
                                                 .errorCode(-1)
-                                                .errorMessage("The component is in use by other components")
+                                                .errorMessage("The component has not been found")
                                                 .build()
 
                         ),
