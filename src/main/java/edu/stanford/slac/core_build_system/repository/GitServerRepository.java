@@ -2,6 +2,7 @@ package edu.stanford.slac.core_build_system.repository;
 
 import edu.stanford.slac.core_build_system.model.Component;
 import edu.stanford.slac.core_build_system.model.NewBranch;
+import edu.stanford.slac.core_build_system.model.Issue;
 import edu.stanford.slac.core_build_system.model.PullRequest;
 
 public interface GitServerRepository {
@@ -16,6 +17,8 @@ public interface GitServerRepository {
     void createNewPR(Component component, PullRequest pullRequest) throws Exception;
 
     String downLoadRepository(Component component, String branchName, String clonePath) throws Exception;
+
+    String addIssue(Component component, Issue issue) throws Exception;
 
     void enableEvent(Component component, String uriToCall) throws Exception;
 

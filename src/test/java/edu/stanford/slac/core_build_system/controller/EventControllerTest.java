@@ -278,4 +278,22 @@ public class EventControllerTest {
         assertThat(componentFound.getPayload()).isNotNull();
         assertThat(componentFound.getPayload().branches()).extracting("branchName").contains("main");
     }
+
+    @Test   
+    public void createNewIssueOK() throws Exception {
+        var issueResult = assertDoesNotThrow(
+                () -> testControllerHelperService.componentControllerCreateIssue(
+                        mockMvc,
+                        status().isOk(),
+                        Optional.of("user1@slac.stanford.edu"),
+                        "component-a",
+                        IssueDTO
+                            .builder()
+                            .issueTitle("Fix - CATER #16454")
+                            .issueBody("<Insert CATER Description and hyperlink, once new CATER released>")
+                            .build()
+                )
+        );
+        assertThat(issueResult).isNotNull();
+    }
 }

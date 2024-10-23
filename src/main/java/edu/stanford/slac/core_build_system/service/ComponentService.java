@@ -348,6 +348,41 @@ public class ComponentService {
     }
 
     /**
+     * Add a new issue to a component
+     *
+     * @param componentName The name of the component
+     * @param issueDTO     The new issue
+     */
+    public String addNewIssue(String componentName, IssueDTO issueDTO) {
+        // Check if component exists
+        Component comp = wrapCatch(
+                () -> componentRepository.findByName(componentName)
+                        .orElseThrow(
+                                () ->
+                                        ControllerLogicException.builder()
+                                                .errorCode(-1)
+                                                .errorMessage("The component has not been found")
+                                                .build()
+
+                        ),
+                -2
+        );
+
+        // TODO: check if the issue name already exists
+
+        // Add the issue to the component on github (for now its github only)
+        log.info("Add issue for component {}", comp.getName());
+        String issueLink = wrapCatch(
+                () -> {gitServerRepository.addIssue(
+                        comp,
+                        componentMapper.toModel(issueDTO)); return null;},
+                -3
+        );
+        log.info("Issue {} added for component {}", issueDTO.issueTitle(), comp.getName());
+        return issueLink;
+    }
+
+    /**
      * Create an artifact by engine name and component list
      *
      * @param engineName   The name of the engine

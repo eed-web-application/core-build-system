@@ -3,6 +3,7 @@ package edu.stanford.slac.core_build_system.controller;
 import edu.stanford.slac.core_build_system.api.v1.dto.ComponentSummaryDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.NewComponentDTO;
 import edu.stanford.slac.core_build_system.api.v1.dto.UpdateComponentDTO;
+import edu.stanford.slac.core_build_system.api.v1.dto.IssueDTO;
 import edu.stanford.slac.core_build_system.config.GitHubClient;
 import edu.stanford.slac.core_build_system.exception.ComponentNotFound;
 import edu.stanford.slac.core_build_system.model.Component;

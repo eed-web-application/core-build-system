@@ -4,11 +4,13 @@ package edu.stanford.slac.core_build_system.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import edu.stanford.slac.ad.eed.baselib.api.v1.dto.ApiResultResponse;
 import edu.stanford.slac.ad.eed.baselib.auth.JWTHelper;
 import edu.stanford.slac.ad.eed.baselib.config.AppProperties;
 import edu.stanford.slac.core_build_system.api.v1.dto.*;
 import edu.stanford.slac.core_build_system.model.Component;
+
 import org.mapstruct.Builder;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
@@ -20,6 +22,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
@@ -29,7 +32,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.security.web.header.Header;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+
+import edu.stanford.slac.core_build_system.model.Issue;
 
 @Service()
 public class TestControllerHelperService {
@@ -60,6 +66,36 @@ public class TestControllerHelperService {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(newComponentDTO));
 
+        return executeHttpRequest(
+                new TypeReference<>() {
+                },
+                mockMvc,
+                resultMatcher,
+                userInfo,
+                requestBuilder
+        );
+    }
+
+    /**     
+     * Create an issue
+     *
+     * @param mockMvc       MockMvc
+     * @param resultMatcher ResultMatcher
+     * @param userInfo      Optional<String>
+     * @param componentName String
+     * @param issueDTO      IssueDTO
+     * @return ApiResultResponse<String>
+     */
+    public ApiResultResponse<String> componentControllerCreateIssue(
+            MockMvc mockMvc,
+            ResultMatcher resultMatcher,
+            Optional<String> userInfo,
+            String componentName,
+            IssueDTO issueDTO
+    ) throws Exception {
+        var requestBuilder = put("/v1/component/{componentName}/issue", componentName)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(issueDTO));
         return executeHttpRequest(
                 new TypeReference<>() {
                 },

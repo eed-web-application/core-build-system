@@ -129,4 +129,18 @@ public class ComponentController {
         componentService.enableEvent(componentName, enable);
         return ApiResultResponse.of(true);
     }
+
+    @PutMapping(
+            path = "/{componentName}/issue",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            consumes = {MediaType.APPLICATION_JSON_VALUE}
+    )
+    @Operation(summary = "Create new issue for a component based off cater")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResultResponse<String> addIssue(
+            @PathVariable @NotEmpty String componentName,
+            @RequestBody @Valid IssueDTO issueDTO
+    ) {
+        return ApiResultResponse.of(componentService.addNewIssue(componentName, issueDTO));
+    }
 }
